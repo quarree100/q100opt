@@ -71,7 +71,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'pandas>=0.25.3',
+        "pandas",
     ],
     extras_require={
         # eg:
