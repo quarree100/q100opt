@@ -31,8 +31,8 @@ Overview
     :alt: Coverage Status
     :target: https://codecov.io/github/quarree100/q100opt
 
-.. |codacy| image:: https://img.shields.io/codacy/grade/[Get ID from https://app.codacy.com/app/quarree100/q100opt/settings].svg
-    :target: https://www.codacy.com/app/quarree100/q100opt
+.. |codacy| image:: https://api.codacy.com/project/badge/Grade/6172cb1979214be2837a34df246668e4
+    :target: https://app.codacy.com/gh/quarree100/q100opt?utm_source=github.com&utm_medium=referral&utm_content=quarree100/q100opt&utm_campaign=Badge_Grade_Dashboard
     :alt: Codacy Code Quality Status
 
 .. |commits-since| image:: https://img.shields.io/github/commits-since/quarree100/q100opt/v0.0.0.svg
@@ -90,7 +90,3 @@ Note, to combine the coverage data from all the tox environments run:
 
             PYTEST_ADDOPTS=--cov-append tox
 
-
-.. image:: https://api.codacy.com/project/badge/Grade/6172cb1979214be2837a34df246668e4
-   :alt: Codacy Badge
-   :target: https://app.codacy.com/gh/quarree100/q100opt?utm_source=github.com&utm_medium=referral&utm_content=quarree100/q100opt&utm_campaign=Badge_Grade_Dashboard
