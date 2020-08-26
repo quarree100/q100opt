@@ -16,4 +16,3 @@ def test_import_csv():
     dir_import = os.path.join(basedir, '_files/import_csv')
     dic = load_csv_data(dir_import)
     eq_(dic['Source']['label'][0], 'heat')
-
