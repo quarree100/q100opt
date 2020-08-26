@@ -1,8 +1,6 @@
 
 import os
 
-from nose.tools import eq_
-
 from q100opt.cli import main
 from q100opt.setup_model import load_csv_data
 
@@ -16,4 +14,4 @@ def test_main():
 def test_import_csv():
     dir_import = os.path.join(basedir, '_files/import_csv')
     dic = load_csv_data(dir_import)
-    eq_(dic['Source']['label'][0], 'heat')
+    assert dic['Source']['label'][0] == 'heat'
