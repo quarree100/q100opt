@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Function for reading predefined data and setting up an oemof-solph EnergySystem.
+"""Function for reading predefined data and setting up an oemof-solph
+EnergySystem.
 
 SPDX-License-Identifier: MIT
 
@@ -28,12 +28,12 @@ def load_csv_data(path):
 
     """
 
-    dict = {}
+    dct = {}
 
     for name in os.listdir(path):
 
         key = name.split('.csv')[0]
         val = pd.read_csv(os.path.join(path, name))
-        dict.update([(key, val)])
+        dct.update([(key, val)])
 
-    return dict
+    return dct
