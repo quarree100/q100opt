@@ -1,9 +1,10 @@
 
 import os
-from q100opt.cli import main
-from nose.tools import eq_
-from q100opt.setup_model import load_csv_data
 
+from nose.tools import eq_
+
+from q100opt.cli import main
+from q100opt.setup_model import load_csv_data
 
 basedir = os.path.dirname(__file__)
 
