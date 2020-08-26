@@ -27,7 +27,6 @@ def load_csv_data(path):
     dict
 
     """
-
     dct = {}
 
     for name in os.listdir(path):
