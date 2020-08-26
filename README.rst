@@ -50,11 +50,7 @@ Model builder for oemof-solph optimisation models with a focus an district energ
 Installation
 ============
 
-::
-
-    pip install q100opt
-
-You can also install the in-development version with::
+You can install the in-development version with::
 
     pip install https://github.com/quarree100/q100opt/archive/master.zip
 
