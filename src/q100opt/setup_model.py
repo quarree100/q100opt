@@ -12,6 +12,21 @@ import pandas as pd
 
 
 def load_csv_data(path):
+    """
+    Loading all csv files of the given path
+    as pandas DataFrames into a dictionary.
+    The keys of the dictionary are the names of the csv files
+    (without .csv).
+
+    Parameters
+    ----------
+    path : str
+
+    Returns
+    -------
+    dict
+
+    """
 
     dict = {}
 
