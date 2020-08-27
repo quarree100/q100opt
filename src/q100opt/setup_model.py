@@ -115,3 +115,7 @@ def add_buses(table):
             )
 
     return nodes, busd
+
+
+def add_sources():
+    pass
