@@ -39,7 +39,8 @@ def load_csv_data(path):
 
 
 def check_active(dct):
-    """Checks for active components.
+    """
+    Checks for active components.
 
     Delete not "active" rows, and the column
     'active' of all components dataframes.
@@ -63,9 +64,10 @@ def check_active(dct):
 
 
 def add_buses(table):
-    """Instantiates the oemof-solph.Buses based on tabular data, and returns
-    the Buses in a Dictionary and in a List. If excess and shortage is given,
-    additional sinks and sources are created.
+    """Instantiates the oemof-solph.Buses based on tabular data.
+
+    Retruns the Buses in a Dictionary and in a List.
+    If excess and shortage is given, additional sinks and sources are created.
 
     Parameters
     ----------

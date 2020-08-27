@@ -52,4 +52,5 @@ def test_add_bus_ex_short():
     n, b = add_buses(data_bus)
     assert ((len(n) == 4) and
             ([x.label for x in n if isinstance(x, solph.Sink)][0] ==
-             'label_1_excess'))
+             'label_1_excess') and
+            (isinstance(b['label_1'], solph.Bus)))
