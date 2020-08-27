@@ -1,9 +1,10 @@
 q100opt
 =======
 
-.. testsetup::
+setup_model module
+-------------------
 
-    from q100opt import *
-
-.. automodule:: q100opt
+.. automodule:: q100opt.setup_model
     :members:
+    :undoc-members:
+    :show-inheritance:
