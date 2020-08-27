@@ -79,8 +79,17 @@ def add_buses(table):
     busd : dict
         Dictionary with all oemof Bus object. Keys are equal to the label of
         the bus.
-    """
 
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from q100opt.setup_model import add_buses
+    >>> data_bus = pd.DataFrame([['label_1', 0, 0, 0, 0],
+    ... ['label_2', 0, 0, 0, 0]],
+    ... columns=['label', 'excess', 'shortage', 'shortage_costs',
+    ... 'excess_costs'])
+    >>> nodes, buses = add_buses(data_bus)
+    """
     busd = {}
     nodes = []
 
