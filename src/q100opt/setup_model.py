@@ -36,3 +36,4 @@ def load_csv_data(path):
         dct.update([(key, val)])
 
     return dct
+
