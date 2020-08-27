@@ -42,3 +42,14 @@ def test_add_bus():
                  'excess_costs'])
     n, b = add_buses(data_bus)
     assert ((len(n) == 2) and (isinstance(b['label_1'], solph.Bus)))
+
+
+def test_add_bus_ex_short():
+    data_bus = pd.DataFrame(
+        [['label_1', 1, 1, 0, 0], ['label_2', 0, 0, 0, 0]],
+        columns=['label', 'excess', 'shortage', 'shortage_costs',
+                 'excess_costs'])
+    n, b = add_buses(data_bus)
+    assert ((len(n) == 4) and
+            ([x.label for x in n if isinstance(x, solph.Sink)][0] ==
+             'label_1_excess'))

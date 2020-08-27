@@ -103,13 +103,13 @@ def add_buses(table):
             nodes.append(
                 solph.Sink(label=b['label'] + '_excess',
                            inputs={busd[b['label']]: solph.Flow(
-                               variable_costs=b['excess costs'])})
+                               variable_costs=b['excess_costs'])})
             )
         if b['shortage']:
             nodes.append(
                 solph.Source(label=b['label'] + '_shortage',
                              outputs={busd[b['label']]: solph.Flow(
-                                 variable_costs=b['shortage costs'])})
+                                 variable_costs=b['shortage_costs'])})
             )
 
     return nodes, busd
