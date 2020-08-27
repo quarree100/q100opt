@@ -38,8 +38,9 @@ def load_csv_data(path):
 
 
 def check_active(dct):
-    """
-    Checks for active components. Delete not "active" rows, and the column
+    """Checks for active components.
+
+    Delete not "active" rows, and the column
     'active' of all components dataframes.
 
     Parameters
