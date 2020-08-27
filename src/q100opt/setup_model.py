@@ -25,7 +25,6 @@ def load_csv_data(path):
     Returns
     -------
     dict
-
     """
     dct = {}
 
@@ -37,3 +36,25 @@ def load_csv_data(path):
 
     return dct
 
+
+def check_active(dct):
+    """
+    Checks for active components. Delete not "active" rows, and the column
+    'active' of all components dataframes.
+
+    Parameters
+    ----------
+    dct : dict
+        Holding the Dataframes of solph components
+
+    Returns
+    -------
+    dict
+    """
+    for k, v in dct.items():
+        if 'active' in v.columns:
+            v_new = v[v['active'] == 1].copy()
+            v_new.drop('active', axis=1, inplace=True)
+            dct[k] = v_new
+
+    return dct
