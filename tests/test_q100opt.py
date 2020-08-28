@@ -7,6 +7,7 @@ import pandas as pd
 from q100opt.cli import main
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sinks
+from q100opt.setup_model import add_sinks_fix
 from q100opt.setup_model import add_sources
 from q100opt.setup_model import add_sources_fix
 from q100opt.setup_model import check_active
@@ -135,3 +136,16 @@ def test_add_sinks():
     sinks = add_sinks(tab, d)
     inflow = sinks[0].inputs[b1]
     assert (len(sinks) == 2) and (hasattr(inflow, 'variable_costs'))
+
+
+def test_add_sinks_fix():
+    tab = pd.DataFrame(
+        [['elec', 'b_1', 1], ['heat', 'b_1', 56]],
+        columns=['label', 'from', 'nominal_value'])
+    ts = pd.DataFrame([[9, 2], [9, 2]], columns=['heat.fix', 'elec.fix'])
+    b1 = solph.Bus(label='b_1')
+    d = {'b_1': b1}
+    sinks_fix = add_sinks_fix(tab, d, ts)
+    assert (sinks_fix[0].inputs[b1].fix.sum() == 4) and \
+           (sinks_fix[1].inputs[b1].fix.sum() == 18) and \
+           (isinstance(sinks_fix[0], solph.Sink))
