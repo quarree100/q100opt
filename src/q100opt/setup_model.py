@@ -340,3 +340,53 @@ def add_sinks_fix(tab, busd, timeseries):
         )
 
     return sinks_fix
+
+
+def add_storages(tab, busd):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Storages.
+    busd : dict
+        Dictionary with Buses.
+
+    Returns
+    -------
+    storages : list
+        List with oemof GenericStorage components.
+    """
+    storages = []
+
+    for i, s in tab.iterrows():
+
+        att = list(s.index)
+        fa_list = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'storage']
+
+        sto_attr = {}
+
+        for fa in fa_list:
+            sto_attr[fa] = s['storage.' + fa]
+
+        io = get_invest_obj(s)
+
+        if io is not None:
+            sto_attr['nominal_storage_capacity'] = None
+            sto_attr['invest_relation_input_capacity'] = \
+                s['invest_relation_input_capacity']
+            sto_attr['invest_relation_output_capacity'] = \
+                s['invest_relation_output_capacity']
+
+        storages.append(
+            solph.components.GenericStorage(
+                label=s['label'],
+                inputs={busd[s['bus']]: solph.Flow()},
+                outputs={busd[s['bus']]: solph.Flow()},
+                investment=io,
+                **sto_attr,
+            )
+        )
+
+    return storages

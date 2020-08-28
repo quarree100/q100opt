@@ -8,6 +8,7 @@ from q100opt.cli import main
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sinks
 from q100opt.setup_model import add_sinks_fix
+from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_sources
 from q100opt.setup_model import add_sources_fix
 from q100opt.setup_model import check_active
@@ -149,3 +150,18 @@ def test_add_sinks_fix():
     assert (sinks_fix[0].inputs[b1].fix.sum() == 4) and \
            (sinks_fix[1].inputs[b1].fix.sum() == 18) and \
            (isinstance(sinks_fix[0], solph.Sink))
+
+
+def test_add_storages():
+    tab = pd.DataFrame(
+        [['S1', 1, 'b1', 45, 3, 0.2, 0.3],
+         ['S2', 0, 'b1', 150, 2, 0.3, 0.2]],
+        columns=['label', 'investment', 'bus',
+                 'storage.nominal_storage_capacity', 'invest.ep_costs',
+                 'invest_relation_input_capacity',
+                 'invest_relation_output_capacity']
+    )
+    b1 = solph.Bus(label='b1')
+    storages = add_storages(tab, {'b1': b1})
+    assert (storages[0].nominal_storage_capacity is None) and \
+           (hasattr(storages[1], 'investment'))
