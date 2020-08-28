@@ -283,7 +283,11 @@ def add_sinks(tab, busd, timeseries=None):
     Returns
     -------
     sources : list
-        List with oemof Source (non fix sources) objects.
+        List with oemof Sink (non fix sources) objects.
+
+    Note
+    ----
+    No investment possible.
     """
     sinks = []
 
@@ -298,3 +302,41 @@ def add_sinks(tab, busd, timeseries=None):
         )
 
     return sinks
+
+
+def add_sinks_fix(tab, busd, timeseries):
+    """
+    Add fix sinks, e.g. for energy demands.
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sinks.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        (Required) Table with all timeseries parameters.
+
+    Returns
+    -------
+    sinks_fix : list
+        List with oemof Sink (non fix sources) objects.
+
+    Note
+    ----
+    No investment possible.
+    """
+    sinks_fix = []
+
+    for i, cs in tab.iterrows():
+
+        sinks_fix.append(
+            solph.Sink(
+                label=cs['label'],
+                inputs={busd[cs['from']]: solph.Flow(
+                    nominal_value=cs['nominal_value'],
+                    fix=timeseries[cs['label'] + '.fix']
+                )})
+        )
+
+    return sinks_fix
