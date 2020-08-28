@@ -136,3 +136,50 @@ def get_invest_obj(row):
         invest_object = None
 
     return invest_object
+
+
+def add_sources(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sources.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Source (non fix sources) objects.
+    """
+    sources = []
+
+    att = list(tab.columns)
+    fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
+
+    for i, cs in tab.iterrows():
+
+        flow_attr = {}
+
+        for fa in fa_list:
+            if cs['flow.' + fa] == 'series':
+                flow_attr[fa] = timeseries[cs['label'] + '.' + fa].values
+            else:
+                flow_attr[fa] = float(cs['flow.' + fa])
+
+        io = get_invest_obj(cs)
+
+        if io is not None:
+            flow_attr['nominal_value'] = None
+
+        sources.append(
+            solph.Source(
+                label=cs['label'],
+                outputs={busd[cs['to']]: solph.Flow(
+                    investment=io, **flow_attr)})
+        )
+
+    return sources

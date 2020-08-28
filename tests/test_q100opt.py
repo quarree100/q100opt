@@ -6,6 +6,7 @@ import pandas as pd
 
 from q100opt.cli import main
 from q100opt.setup_model import add_buses
+from q100opt.setup_model import add_sources
 from q100opt.setup_model import check_active
 from q100opt.setup_model import get_invest_obj
 from q100opt.setup_model import load_csv_data
@@ -71,3 +72,37 @@ def test_get_invest_3():
     series = pd.Series([1, 5, 1], index=['investment', 'invest.ep_costs', 'C'])
     io = get_invest_obj(series)
     assert io.ep_costs == 5
+
+
+def test_add_source_1():
+    tab = pd.DataFrame(
+        [['label_1', 'b_1', 1], ['label_2', 'b_2', 56]],
+        columns=['label', 'to', 'flow.variable_costs'])
+    b1 = solph.Bus(label='b_1')
+    b2 = solph.Bus(label='b_2')
+    d = {'b_1': b1, 'b_2': b2}
+    sources = add_sources(tab, d)
+    assert sources[1].label == 'label_2'
+
+
+def test_add_source_ts():
+    tab = pd.DataFrame(
+        [['label_1', 'b_1', 'series'], ['label_2', 'b_2', 56]],
+        columns=['label', 'to', 'flow.variable_costs'])
+    b1 = solph.Bus(label='b_1')
+    b2 = solph.Bus(label='b_2')
+    d = {'b_1': b1, 'b_2': b2}
+    ts = pd.DataFrame([6, 8, 7], columns=['label_1.variable_costs'])
+    sources = add_sources(tab, d, ts)
+    assert sources[0].outputs[b1].variable_costs.sum() == 21
+
+
+def test_add_source_invest():
+    tab = pd.DataFrame(
+        [['label_1', 'b_1', 1, 1], ['label_2', 'b_2', 56, 0]],
+        columns=['label', 'to', 'flow.variable_costs', 'investment'])
+    b1 = solph.Bus(label='b_1')
+    b2 = solph.Bus(label='b_2')
+    d = {'b_1': b1, 'b_2': b2}
+    sources = add_sources(tab, d)
+    assert hasattr(sources[0].outputs[b1], 'investment')
