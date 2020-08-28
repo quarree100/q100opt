@@ -118,6 +118,21 @@ def add_buses(table):
 
 
 def get_invest_obj(row):
+    """
+    Filters all attributes for the investment attributes with
+    the prefix`invest.`, if attribute 'investment' occurs, and if attribute
+    `investment` is set to 1.
+
+    Parameters
+    ----------
+    row : pd.Series
+        Parameters for single oemof object.
+
+    Returns
+    -------
+    invest_objects : dict
+
+    """
 
     index = list(row.index)
 
@@ -138,6 +153,36 @@ def get_invest_obj(row):
     return invest_object
 
 
+def get_flow_att(row, ts):
+    """
+
+    Parameters
+    ----------
+    row : pd.Series
+        Series with all attributes given by the parameter table (equal 1 row)
+    ts : pd.DataFrame
+        DataFrame with all input time series for the oemof-solph model.
+
+    Returns
+    -------
+    flow_attr : dict
+        Dictionary with all Flow specific attribues.
+    """
+
+    att = list(row.index)
+    fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
+
+    flow_attr = {}
+
+    for fa in fa_list:
+        if row['flow.' + fa] == 'series':
+            flow_attr[fa] = ts[row['label'] + '.' + fa].values
+        else:
+            flow_attr[fa] = float(row['flow.' + fa])
+
+    return flow_attr
+
+
 def add_sources(tab, busd, timeseries=None):
     """
 
@@ -148,7 +193,7 @@ def add_sources(tab, busd, timeseries=None):
     busd : dict
         Dictionary with Buses.
     timeseries : pd.DataFrame
-        Table with all timeseries parameters.
+        (Optional) Table with all timeseries parameters.
 
     Returns
     -------
@@ -157,18 +202,9 @@ def add_sources(tab, busd, timeseries=None):
     """
     sources = []
 
-    att = list(tab.columns)
-    fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
-
     for i, cs in tab.iterrows():
 
-        flow_attr = {}
-
-        for fa in fa_list:
-            if cs['flow.' + fa] == 'series':
-                flow_attr[fa] = timeseries[cs['label'] + '.' + fa].values
-            else:
-                flow_attr[fa] = float(cs['flow.' + fa])
+        flow_attr = get_flow_att(cs, timeseries)
 
         io = get_invest_obj(cs)
 
@@ -201,6 +237,11 @@ def add_sources_fix(tab, busd, timeseries):
     -------
     sources : list
         List with oemof Source (only fix source) objects.
+
+    Note
+    ----
+    At the moment, there are no additional flow attributes allowed, and
+    `nominal_value` must be given in the table.
     """
     sources_fix = []
 
@@ -225,3 +266,35 @@ def add_sources_fix(tab, busd, timeseries):
         )
 
     return sources_fix
+
+
+def add_sinks(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sinks.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        (Optional) Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Source (non fix sources) objects.
+    """
+    sinks = []
+
+    for i, cs in tab.iterrows():
+
+        flow_attr = get_flow_att(cs, timeseries)
+
+        sinks.append(
+            solph.Sink(
+                label=cs['label'],
+                inputs={busd[cs['from']]: solph.Flow(**flow_attr)})
+        )
+
+    return sinks

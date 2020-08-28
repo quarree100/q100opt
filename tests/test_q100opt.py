@@ -6,6 +6,7 @@ import pandas as pd
 
 from q100opt.cli import main
 from q100opt.setup_model import add_buses
+from q100opt.setup_model import add_sinks
 from q100opt.setup_model import add_sources
 from q100opt.setup_model import add_sources_fix
 from q100opt.setup_model import check_active
@@ -123,3 +124,14 @@ def test_add_source_fix():
     assert sources[0].outputs[b1].fix.sum() == 9
     assert sources[1].outputs[b1].fix.sum() == 12
     assert hasattr(sources[1].outputs[b1], 'investment')
+
+
+def test_add_sinks():
+    tab = pd.DataFrame(
+        [['label_1', 'b_1', 1], ['label_2', 'b_1', 56]],
+        columns=['label', 'from', 'flow.variable_costs'])
+    b1 = solph.Bus(label='b_1')
+    d = {'b_1': b1}
+    sinks = add_sinks(tab, d)
+    inflow = sinks[0].inputs[b1]
+    assert (len(sinks) == 2) and (hasattr(inflow, 'variable_costs'))
