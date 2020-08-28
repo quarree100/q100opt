@@ -117,5 +117,22 @@ def add_buses(table):
     return nodes, busd
 
 
-def add_sources():
-    pass
+def get_invest_obj(row):
+
+    index = list(row.index)
+
+    if 'investment' in index:
+        if row['investment']:
+            invest_attr = {}
+            ia_list = [x.split('.')[1] for x in index
+                       if x.split('.')[0] == 'invest']
+            for ia in ia_list:
+                invest_attr[ia] = row['invest.' + ia]
+            invest_object = solph.Investment(**invest_attr)
+
+        else:
+            invest_object = None
+    else:
+        invest_object = None
+
+    return invest_object

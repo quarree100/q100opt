@@ -7,6 +7,7 @@ import pandas as pd
 from q100opt.cli import main
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import check_active
+from q100opt.setup_model import get_invest_obj
 from q100opt.setup_model import load_csv_data
 
 basedir = os.path.dirname(__file__)
@@ -54,3 +55,19 @@ def test_add_bus_ex_short():
             ([x.label for x in n if isinstance(x, solph.Sink)][0] ==
              'label_1_excess') and
             (isinstance(b['label_1'], solph.Bus)))
+
+
+def test_get_invest_1():
+    series = pd.Series([1, 1, 1], index=['A', 'B', 'C'])
+    assert get_invest_obj(series) is None
+
+
+def test_get_invest_2():
+    series = pd.Series([0, 1, 1], index=['investment', 'B', 'C'])
+    assert get_invest_obj(series) is None
+
+
+def test_get_invest_3():
+    series = pd.Series([1, 5, 1], index=['investment', 'invest.ep_costs', 'C'])
+    io = get_invest_obj(series)
+    assert io.ep_costs == 5
