@@ -183,3 +183,45 @@ def add_sources(tab, busd, timeseries=None):
         )
 
     return sources
+
+
+def add_sources_fix(tab, busd, timeseries):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sources.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Source (only fix source) objects.
+    """
+    sources_fix = []
+
+    for k, l in tab.iterrows():
+
+        flow_attr = {}
+
+        io = get_invest_obj(l)
+
+        if io is not None:
+            flow_attr['nominal_value'] = None
+        else:
+            flow_attr['nominal_value'] = l['flow.nominal_value']
+
+        flow_attr['fix'] = timeseries[l['label'] + '.fix'].values
+
+        sources_fix.append(
+            solph.Source(
+                label=l['label'],
+                outputs={busd[l['to']]: solph.Flow(
+                    **flow_attr, investment=io)})
+        )
+
+    return sources_fix

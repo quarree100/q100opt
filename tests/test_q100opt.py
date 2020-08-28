@@ -7,6 +7,7 @@ import pandas as pd
 from q100opt.cli import main
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sources
+from q100opt.setup_model import add_sources_fix
 from q100opt.setup_model import check_active
 from q100opt.setup_model import get_invest_obj
 from q100opt.setup_model import load_csv_data
@@ -106,3 +107,19 @@ def test_add_source_invest():
     d = {'b_1': b1, 'b_2': b2}
     sources = add_sources(tab, d)
     assert hasattr(sources[0].outputs[b1], 'investment')
+
+
+def test_add_source_fix():
+    tab = pd.DataFrame(
+        [['label_1', 'b_1', 12, 0, 66, 23],
+         ['label_2', 'b_1', 56, 1, 15, 34]],
+        columns=['label', 'to', 'flow.variable_costs', 'investment',
+                 'invest.ep_costs', 'flow.nominal_value'])
+    b1 = solph.Bus(label='b_1')
+    d = {'b_1': b1}
+    ts = pd.DataFrame([[6, 8], [3, 4]], columns=['label_1.fix', 'label_2.fix'])
+    sources = add_sources_fix(tab, d, ts)
+    assert sources[0].outputs[b1].nominal_value == 23
+    assert sources[0].outputs[b1].fix.sum() == 9
+    assert sources[1].outputs[b1].fix.sum() == 12
+    assert hasattr(sources[1].outputs[b1], 'investment')
