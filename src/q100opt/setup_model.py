@@ -95,7 +95,7 @@ def add_buses(table):
     busd = {}
     nodes = []
 
-    for i, b in table.iterrows():
+    for _, b in table.iterrows():
 
         bus = solph.Bus(label=b['label'])
         nodes.append(bus)
@@ -202,7 +202,7 @@ def add_sources(tab, busd, timeseries=None):
     """
     sources = []
 
-    for i, cs in tab.iterrows():
+    for _, cs in tab.iterrows():
 
         flow_attr = get_flow_att(cs, timeseries)
 
@@ -245,7 +245,7 @@ def add_sources_fix(tab, busd, timeseries):
     """
     sources_fix = []
 
-    for k, l in tab.iterrows():
+    for _, l in tab.iterrows():
 
         flow_attr = {}
 
@@ -291,7 +291,7 @@ def add_sinks(tab, busd, timeseries=None):
     """
     sinks = []
 
-    for i, cs in tab.iterrows():
+    for _, cs in tab.iterrows():
 
         flow_attr = get_flow_att(cs, timeseries)
 
@@ -328,7 +328,7 @@ def add_sinks_fix(tab, busd, timeseries):
     """
     sinks_fix = []
 
-    for i, cs in tab.iterrows():
+    for _, cs in tab.iterrows():
 
         sinks_fix.append(
             solph.Sink(
@@ -359,7 +359,7 @@ def add_storages(tab, busd):
     """
     storages = []
 
-    for i, s in tab.iterrows():
+    for _, s in tab.iterrows():
 
         att = list(s.index)
         fa_list = [
@@ -412,7 +412,7 @@ def add_transformer(tab, busd, timeseries=None):
     """
     transformer = []
 
-    for i, t in tab.iterrows():
+    for _, t in tab.iterrows():
 
         flow_out1_attr = get_flow_att(t, timeseries)
 
