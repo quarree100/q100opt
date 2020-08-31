@@ -442,13 +442,13 @@ def add_transformer(tab, busd, timeseries=None):
 
         # update inflows and conversion factors, if a second inflow bus label
         # is given
-        if t['in_2'] != '0':
+        if not (t['in_2'] == '0' or t['in_2'] == 0):
             d_in.update({busd[t['in_2']]: solph.Flow()})
             cv.update({busd[t['in_2']]: d_eff['eff_in_2']})
 
         # update outflows and conversion factors, if a second outflow bus label
         # is given
-        if t['out_2'] != '0':
+        if not (t['out_2'] == '0' or t['out_2'] == 0):
             d_out.update({busd[t['out_2']]: solph.Flow()})
             cv.update({busd[t['out_2']]: d_eff['eff_out_2']})
 
