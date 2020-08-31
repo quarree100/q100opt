@@ -1,0 +1,12 @@
+label,active,investment,in_1,in_2,out_1,out_2,eff_in_1,eff_in_2,eff_out_1,eff_out_2,flow.nominal_value,flow.variable_costs,flow.emission_factor,flow.summed_max,flow.max,invest.ep_costs,invest.maximum
+t_boiler,1,1,b_gas_buy,0,b_heat_gen,0,1,,0.95,,,0,0,8760,1,4.069700726,5000
+t_bhkw,1,1,b_gas_buy,0,b_el_bhkw,b_heat_gen,1,,0.38,0.55,,0.027615385,0,8760,1,189.5198274,5000
+t_help_bhkw_kwkg_eigen,1,0,b_el_bhkw,0,b_el_ez,0,1,,1,,100000,0,0,8760,1,,
+t_help_bhkw_kwkg_sell,1,0,b_el_bhkw,0,b_el_sell,0,1,,1,,100000,0,0,8760,1,,
+t_pump_heatgrid,1,0,b_heat_gen,b_el_ez,b_heat_grid,0,1,0.015,1,,100000,0,0,8760,1,,
+t_wp_A_W70,1,1,b_el_ez,0,b_heat_gen,0,1,,series,,,0,0,8760,series,32.78025809,5000
+t_geothermal_sonde,1,0,b_heat_ground,0,b_heat_brine,0,1,,1,,100000,0,0,8760,1,,
+t_wp_geo,1,1,b_el_ez,b_heat_brine,b_heat_gen,0,1,1.8,2.8,,,0,0,2500,1,91.54952752,622.2222222
+t_storage_heat_in,1,0,b_heat_gen,0,b_heat_store,0,1,,0.999,,10000,0,0,8760,1,,
+t_storage_heat_out,1,0,b_heat_store,0,b_heat_gen,0,1,,0.999,,10000,0,0,8760,1,,
+t_help_pv_ez,1,0,b_el_pv,0,b_el_ez,0,1,,1,,100000,0,0,8760,1,,

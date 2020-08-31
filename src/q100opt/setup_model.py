@@ -95,7 +95,7 @@ def add_buses(table):
     busd = {}
     nodes = []
 
-    for i, b in table.iterrows():
+    for _, b in table.iterrows():
 
         bus = solph.Bus(label=b['label'])
         nodes.append(bus)
@@ -115,3 +115,350 @@ def add_buses(table):
             )
 
     return nodes, busd
+
+
+def get_invest_obj(row):
+    """
+    Filters all attributes for the investment attributes with
+    the prefix`invest.`, if attribute 'investment' occurs, and if attribute
+    `investment` is set to 1.
+
+    Parameters
+    ----------
+    row : pd.Series
+        Parameters for single oemof object.
+
+    Returns
+    -------
+    invest_objects : dict
+
+    """
+
+    index = list(row.index)
+
+    if 'investment' in index:
+        if row['investment']:
+            invest_attr = {}
+            ia_list = [x.split('.')[1] for x in index
+                       if x.split('.')[0] == 'invest']
+            for ia in ia_list:
+                invest_attr[ia] = row['invest.' + ia]
+            invest_object = solph.Investment(**invest_attr)
+
+        else:
+            invest_object = None
+    else:
+        invest_object = None
+
+    return invest_object
+
+
+def get_flow_att(row, ts):
+    """
+
+    Parameters
+    ----------
+    row : pd.Series
+        Series with all attributes given by the parameter table (equal 1 row)
+    ts : pd.DataFrame
+        DataFrame with all input time series for the oemof-solph model.
+
+    Returns
+    -------
+    flow_attr : dict
+        Dictionary with all Flow specific attribues.
+    """
+
+    att = list(row.index)
+    fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
+
+    flow_attr = {}
+
+    for fa in fa_list:
+        if row['flow.' + fa] == 'series':
+            flow_attr[fa] = ts[row['label'] + '.' + fa].values
+        else:
+            flow_attr[fa] = float(row['flow.' + fa])
+
+    return flow_attr
+
+
+def add_sources(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sources.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        (Optional) Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Source (non fix sources) objects.
+    """
+    sources = []
+
+    for _, cs in tab.iterrows():
+
+        flow_attr = get_flow_att(cs, timeseries)
+
+        io = get_invest_obj(cs)
+
+        if io is not None:
+            flow_attr['nominal_value'] = None
+
+        sources.append(
+            solph.Source(
+                label=cs['label'],
+                outputs={busd[cs['to']]: solph.Flow(
+                    investment=io, **flow_attr)})
+        )
+
+    return sources
+
+
+def add_sources_fix(tab, busd, timeseries):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sources.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Source (only fix source) objects.
+
+    Note
+    ----
+    At the moment, there are no additional flow attributes allowed, and
+    `nominal_value` must be given in the table.
+    """
+    sources_fix = []
+
+    for _, l in tab.iterrows():
+
+        flow_attr = {}
+
+        io = get_invest_obj(l)
+
+        if io is not None:
+            flow_attr['nominal_value'] = None
+        else:
+            flow_attr['nominal_value'] = l['flow.nominal_value']
+
+        flow_attr['fix'] = timeseries[l['label'] + '.fix'].values
+
+        sources_fix.append(
+            solph.Source(
+                label=l['label'],
+                outputs={busd[l['to']]: solph.Flow(
+                    **flow_attr, investment=io)})
+        )
+
+    return sources_fix
+
+
+def add_sinks(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sinks.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        (Optional) Table with all timeseries parameters.
+
+    Returns
+    -------
+    sources : list
+        List with oemof Sink (non fix sources) objects.
+
+    Note
+    ----
+    No investment possible.
+    """
+    sinks = []
+
+    for _, cs in tab.iterrows():
+
+        flow_attr = get_flow_att(cs, timeseries)
+
+        sinks.append(
+            solph.Sink(
+                label=cs['label'],
+                inputs={busd[cs['from']]: solph.Flow(**flow_attr)})
+        )
+
+    return sinks
+
+
+def add_sinks_fix(tab, busd, timeseries):
+    """
+    Add fix sinks, e.g. for energy demands.
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Sinks.
+    busd : dict
+        Dictionary with Buses.
+    timeseries : pd.DataFrame
+        (Required) Table with all timeseries parameters.
+
+    Returns
+    -------
+    sinks_fix : list
+        List with oemof Sink (non fix sources) objects.
+
+    Note
+    ----
+    No investment possible.
+    """
+    sinks_fix = []
+
+    for _, cs in tab.iterrows():
+
+        sinks_fix.append(
+            solph.Sink(
+                label=cs['label'],
+                inputs={busd[cs['from']]: solph.Flow(
+                    nominal_value=cs['nominal_value'],
+                    fix=timeseries[cs['label'] + '.fix']
+                )})
+        )
+
+    return sinks_fix
+
+
+def add_storages(tab, busd):
+    """
+
+    Parameters
+    ----------
+    tab : pd.DataFrame
+        Table with parameters of Storages.
+    busd : dict
+        Dictionary with Buses.
+
+    Returns
+    -------
+    storages : list
+        List with oemof GenericStorage components.
+    """
+    storages = []
+
+    for _, s in tab.iterrows():
+
+        att = list(s.index)
+        fa_list = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'storage']
+
+        sto_attr = {}
+
+        for fa in fa_list:
+            sto_attr[fa] = s['storage.' + fa]
+
+        io = get_invest_obj(s)
+
+        if io is not None:
+            sto_attr['nominal_storage_capacity'] = None
+            sto_attr['invest_relation_input_capacity'] = \
+                s['invest_relation_input_capacity']
+            sto_attr['invest_relation_output_capacity'] = \
+                s['invest_relation_output_capacity']
+
+        storages.append(
+            solph.components.GenericStorage(
+                label=s['label'],
+                inputs={busd[s['bus']]: solph.Flow()},
+                outputs={busd[s['bus']]: solph.Flow()},
+                investment=io,
+                **sto_attr,
+            )
+        )
+
+    return storages
+
+
+def add_transformer(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pandas.DataFrame
+        Table with all Transformer parameter
+    busd : dict
+        Dictionary with all oemof-solph Bus objects.
+    timeseries : pandas.DataFrame
+        Table with all Timeseries for Transformer.
+
+    Returns
+    -------
+    transformer : list
+        List oemof-solph Transformer objects.
+
+    """
+    transformer = []
+
+    for _, t in tab.iterrows():
+
+        flow_out1_attr = get_flow_att(t, timeseries)
+
+        io = get_invest_obj(t)
+
+        if io is not None:
+            flow_out1_attr['nominal_value'] = None
+
+        d_in = {busd[t['in_1']]: solph.Flow()}
+
+        d_out = {busd[t['out_1']]: solph.Flow(
+            investment=io, **flow_out1_attr
+        )}
+
+        # check if timeseries in conversion factors and convert to float
+        att = list(t.index)
+        eff_list = [x for x in att if x.split('_')[0] == 'eff']
+        d_eff = {}
+        for eff in eff_list:
+            if t[eff] == 'series':
+                d_eff[eff] = timeseries[t['label'] + '.' + eff]
+            else:
+                d_eff[eff] = float(t[eff])
+
+        cv = {busd[t['in_1']]: d_eff['eff_in_1'],
+              busd[t['out_1']]: d_eff['eff_out_1']}
+
+        # update inflows and conversion factors, if a second inflow bus label
+        # is given
+        if t['in_2'] != '0':
+            d_in.update({busd[t['in_2']]: solph.Flow()})
+            cv.update({busd[t['in_2']]: d_eff['eff_in_2']})
+
+        # update outflows and conversion factors, if a second outflow bus label
+        # is given
+        if t['out_2'] != '0':
+            d_out.update({busd[t['out_2']]: solph.Flow()})
+            cv.update({busd[t['out_2']]: d_eff['eff_out_2']})
+
+        transformer.append(
+            solph.Transformer(
+                label=t['label'],
+                inputs=d_in,
+                outputs=d_out,
+                conversion_factors=cv
+            )
+        )
+
+    return transformer

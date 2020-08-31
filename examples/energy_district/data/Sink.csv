@@ -1,0 +1,3 @@
+label,active,from,flow.variable_costs,flow.emission_factor,flow.nominal_value,flow.summed_max
+elec_net_sell,1,b_el_sell,-0.0444,0,100000,8760
+elec_pv_sell,1,b_el_pv,-0.0444,0,100000,8760

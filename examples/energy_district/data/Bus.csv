@@ -1,0 +1,11 @@
+label,active,excess,shortage,shortage_costs,excess_costs
+b_el_sell,1,0,0,9999,9999
+b_el_ez,1,0,0,9999,9999
+b_el_bhkw,1,0,0,9999,9999
+b_gas_buy,1,0,0,9999,9999
+b_heat_gen,1,0,0,9999,9999
+b_heat_grid,1,0,0,9999,9999
+b_heat_brine,1,0,0,9999,9999
+b_heat_ground,1,0,0,9999,9999
+b_heat_store,1,0,0,9999,9999
+b_el_pv,1,0,0,9999,9999
