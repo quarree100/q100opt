@@ -214,4 +214,5 @@ def test_add_trafo_invest():
     b0 = solph.Bus(label='b0')
     b1 = solph.Bus(label='b1')
     transformer = add_transformer(tab, {'b0': b0, 'b1': b1}, timeseries)
-    assert (transformer[0].outputs[b1].nominal_value == None)
+    assert (transformer[0].outputs[b1].nominal_value is None and
+            hasattr(transformer[0].outputs[b1], 'investment'))
