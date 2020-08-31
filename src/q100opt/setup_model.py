@@ -63,6 +63,30 @@ def check_active(dct):
     return dct
 
 
+def check_nonconvex_invest_type(dct):
+    """
+    Checks if flow attribute 'invest.nonconvex' is type bool, if the attribute
+    is present.
+
+    Parameters
+    ----------
+    dct : dict
+        Dictionary with all paramerters for the oemof-solph components.
+
+    Returns
+    -------
+    dict
+        Updated Dictionary is returned.
+    """
+
+    for k, v in dct.items():
+        if 'invest.nonconvex' in v.columns:
+            v['invest.nonconvex'] = v['invest.nonconvex'].astype('bool')
+        dct[k] = v
+
+    return dct
+
+
 def add_buses(table):
     """Instantiates the oemof-solph.Buses based on tabular data.
 

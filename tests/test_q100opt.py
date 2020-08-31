@@ -13,6 +13,7 @@ from q100opt.setup_model import add_sources_fix
 from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_transformer
 from q100opt.setup_model import check_active
+from q100opt.setup_model import check_nonconvex_invest_type
 from q100opt.setup_model import get_invest_obj
 from q100opt.setup_model import load_csv_data
 
@@ -40,6 +41,19 @@ def test_no_active():
     d = {'Something': pd.DataFrame([[4, 1], [3, 0]], columns=['A', 'B'])}
     d_new = check_active(d)
     assert (d == d_new)
+
+
+def test_check_nonconvex_no_invest():
+    d = {'Something': pd.DataFrame([[4, 1], [3, 0]], columns=['A', 'active'])}
+    d_new = check_nonconvex_invest_type(d)
+    assert d == d_new
+
+
+def test_check_nonconvex_invest():
+    d = {'Something': pd.DataFrame([[4, 1], [3, 0]],
+                                   columns=['A', 'invest.nonconvex'])}
+    d = check_nonconvex_invest_type(d)
+    assert (d['Something']['invest.nonconvex'].dtypes == 'bool')
 
 
 def test_add_bus():
