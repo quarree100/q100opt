@@ -390,3 +390,75 @@ def add_storages(tab, busd):
         )
 
     return storages
+
+
+def add_transformer(tab, busd, timeseries=None):
+    """
+
+    Parameters
+    ----------
+    tab : pandas.DataFrame
+        Table with all Transformer parameter
+    busd : dict
+        Dictionary with all oemof-solph Bus objects.
+    timeseries : pandas.DataFrame
+        Table with all Timeseries for Transformer.
+
+    Returns
+    -------
+    transformer : list
+        List oemof-solph Transformer objects.
+
+    """
+    transformer = []
+
+    for i, t in tab.iterrows():
+
+        flow_out1_attr = get_flow_att(t, timeseries)
+
+        io = get_invest_obj(t)
+
+        if io is not None:
+            flow_out1_attr['nominal_value'] = None
+
+        d_in = {busd[t['in_1']]: solph.Flow()}
+
+        d_out = {busd[t['out_1']]: solph.Flow(
+            investment=io, **flow_out1_attr
+        )}
+
+        # check if timeseries in conversion factors and convert to float
+        att = list(t.index)
+        eff_list = [x for x in att if x.split('_')[0] == 'eff']
+        d_eff = {}
+        for eff in eff_list:
+            if t[eff] == 'series':
+                d_eff[eff] = timeseries[t['label'] + '.' + eff]
+            else:
+                d_eff[eff] = float(t[eff])
+
+        cv = {busd[t['in_1']]: d_eff['eff_in_1'],
+              busd[t['out_1']]: d_eff['eff_out_1']}
+
+        # update inflows and conversion factors, if a second inflow bus label
+        # is given
+        if t['in_2'] != '0':
+            d_in.update({busd[t['in_2']]: solph.Flow()})
+            cv.update({busd[t['in_2']]: d_eff['eff_in_2']})
+
+        # update outflows and conversion factors, if a second outflow bus label
+        # is given
+        if t['out_2'] != '0':
+            d_out.update({busd[t['out_2']]: solph.Flow()})
+            cv.update({busd[t['out_2']]: d_eff['eff_out_2']})
+
+        transformer.append(
+            solph.Transformer(
+                label=t['label'],
+                inputs=d_in,
+                outputs=d_out,
+                conversion_factors=cv
+            )
+        )
+
+    return transformer
