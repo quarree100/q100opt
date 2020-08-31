@@ -8,9 +8,10 @@ from q100opt.cli import main
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sinks
 from q100opt.setup_model import add_sinks_fix
-from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_sources
 from q100opt.setup_model import add_sources_fix
+from q100opt.setup_model import add_storages
+from q100opt.setup_model import add_transformer
 from q100opt.setup_model import check_active
 from q100opt.setup_model import get_invest_obj
 from q100opt.setup_model import load_csv_data
@@ -165,3 +166,52 @@ def test_add_storages():
     storages = add_storages(tab, {'b1': b1})
     assert (storages[0].nominal_storage_capacity is None) and \
            (hasattr(storages[1], 'investment'))
+
+
+def test_add_trafo_no_invest_series():
+    tab = pd.DataFrame(
+        [['trafo_1', 'b0', '0', 'b1', '0', 1.2, 'series', 230]],
+        columns=['label', 'in_1', 'in_2', 'out_1', 'out_2', 'eff_in_1',
+                 'eff_out_1', 'flow.nominal_value']
+    )
+    timeseries = pd.DataFrame(
+        [0.3, 1.2, 0.7], columns=['trafo_1.eff_out_1']
+    )
+    b0 = solph.Bus(label='b0')
+    b1 = solph.Bus(label='b1')
+    transformer = add_transformer(tab, {'b0': b0, 'b1': b1}, timeseries)
+    assert (transformer[0].outputs[b1].nominal_value == 230.0)
+
+
+def test_add_trafo_2in_2out():
+    tab = pd.DataFrame(
+        [['trafo_1', 'b0', 'b2', 'b1', 'b3', 1.2, 0.1, 'series', 2, 230]],
+        columns=['label', 'in_1', 'in_2', 'out_1', 'out_2', 'eff_in_1',
+                 'eff_in_2', 'eff_out_1', 'eff_out_2', 'flow.nominal_value']
+    )
+    timeseries = pd.DataFrame(
+        [0.3, 1.2, 0.7], columns=['trafo_1.eff_out_1']
+    )
+    b0 = solph.Bus(label='b0')
+    b1 = solph.Bus(label='b1')
+    b2 = solph.Bus(label='b2')
+    b3 = solph.Bus(label='b3')
+    transformer = add_transformer(
+        tab, {'b0': b0, 'b1': b1, 'b2': b2, 'b3': b3}, timeseries)
+    assert len(transformer[0].outputs) == 2 and \
+           len(transformer[0].inputs) == 2
+
+
+def test_add_trafo_invest():
+    tab = pd.DataFrame(
+        [['trafo_1', 'b0', '0', 'b1', '0', 1.2, 'series', 230, 1]],
+        columns=['label', 'in_1', 'in_2', 'out_1', 'out_2', 'eff_in_1',
+                 'eff_out_1', 'flow.nominal_value', 'investment']
+    )
+    timeseries = pd.DataFrame(
+        [0.3, 1.2, 0.7], columns=['trafo_1.eff_out_1']
+    )
+    b0 = solph.Bus(label='b0')
+    b1 = solph.Bus(label='b1')
+    transformer = add_transformer(tab, {'b0': b0, 'b1': b1}, timeseries)
+    assert (transformer[0].outputs[b1].nominal_value == None)
