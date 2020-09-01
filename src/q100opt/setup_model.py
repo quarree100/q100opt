@@ -75,8 +75,7 @@ def check_nonconvex_invest_type(dct):
 
     Returns
     -------
-    dict
-        Updated Dictionary is returned.
+    dict : Updated Dictionary is returned.
     """
 
     for k, v in dct.items():
@@ -154,7 +153,7 @@ def get_invest_obj(row):
 
     Returns
     -------
-    invest_objects : dict
+    dict
 
     """
 
@@ -189,8 +188,7 @@ def get_flow_att(row, ts):
 
     Returns
     -------
-    flow_attr : dict
-        Dictionary with all Flow specific attribues.
+    dict : All Flow specific attribues.
     """
 
     att = list(row.index)
@@ -221,8 +219,7 @@ def add_sources(tab, busd, timeseries=None):
 
     Returns
     -------
-    sources : list
-        List with oemof Source (non fix sources) objects.
+    list : Oemof Sources (non fix sources) objects.
     """
     sources = []
 
@@ -259,8 +256,7 @@ def add_sources_fix(tab, busd, timeseries):
 
     Returns
     -------
-    sources : list
-        List with oemof Source (only fix source) objects.
+    list : List with oemof Source (only fix source) objects.
 
     Note
     ----
@@ -306,8 +302,7 @@ def add_sinks(tab, busd, timeseries=None):
 
     Returns
     -------
-    sources : list
-        List with oemof Sink (non fix sources) objects.
+    list : oemof Sinks (non fix sources) objects.
 
     Note
     ----
@@ -343,8 +338,7 @@ def add_sinks_fix(tab, busd, timeseries):
 
     Returns
     -------
-    sinks_fix : list
-        List with oemof Sink (non fix sources) objects.
+    list : oemof Sinks (non fix sources) objects.
 
     Note
     ----
@@ -378,8 +372,7 @@ def add_storages(tab, busd):
 
     Returns
     -------
-    storages : list
-        List with oemof GenericStorage components.
+    list : oemof GenericStorage components.
     """
     storages = []
 
@@ -430,8 +423,7 @@ def add_transformer(tab, busd, timeseries=None):
 
     Returns
     -------
-    transformer : list
-        List oemof-solph Transformer objects.
+    list : oemof-solph Transformer objects.
 
     """
     transformer = []
