@@ -75,8 +75,7 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         "pandas",
-        "oemof-solph",
-        "deflex",
+        "oemof.solph >= 0.4.0",
     ],
     extras_require={
         # eg:

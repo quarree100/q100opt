@@ -11,11 +11,13 @@ import os
 
 import oemof.solph as solph
 import pandas as pd
-from deflex.scenario_tools import Scenario
+from q100opt.external import Scenario
 
 
 class DistrictScenario(Scenario):
+
     """Scenario class for urban energy systems"""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
