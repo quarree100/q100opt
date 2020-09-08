@@ -12,18 +12,14 @@ SPDX-License-Identifier: MIT
 __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
-# Python libraries
-import os
 import calendar
 import datetime
-import shutil
-import dill as pickle
 import logging
+import os
+import shutil
 
-# External libraries
+import dill as pickle
 import pandas as pd
-
-# oemof libraries
 from oemof import solph
 
 
