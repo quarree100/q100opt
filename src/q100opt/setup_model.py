@@ -5,10 +5,91 @@
 SPDX-License-Identifier: MIT
 
 """
+import datetime
+import logging
 import os
 
 import oemof.solph as solph
 import pandas as pd
+from deflex.scenario_tools import Scenario
+
+
+class DistrictScenario(Scenario):
+    """Scenario class for urban energy systems"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def load_csv(self, path=None):
+        if path is not None:
+            self.location = path
+        self.table_collection = load_csv_data(self.location)
+        self.check_input()
+        return self
+
+    def check_input(self):
+        self.table_collection = check_active(self.table_collection)
+        self.table_collection = check_nonconvex_invest_type(
+            self.table_collection)
+        return self
+
+    def create_nodes(self):
+        nd = self.table_collection
+        nod, busd = add_buses(nd['Bus'])
+        nod.extend(
+            add_sources(nd['Source'], busd, nd['Timeseries']) +
+            add_sources_fix(nd['Source_fix'], busd, nd['Timeseries']) +
+            add_sinks(nd['Sink'], busd, nd['Timeseries']) +
+            add_sinks_fix(nd['Sink_fix'], busd, nd['Timeseries']) +
+            add_storages(nd['Storages'], busd) +
+            add_transformer(nd['Transformer'], busd, nd['Timeseries'])
+        )
+        return nod
+
+    def table2es(self):
+        if self.es is None:
+            self.es = self.initialise_energy_system()
+        nodes = self.create_nodes()
+        self.es.add(*nodes)
+        return self
+
+    def add_emission_constr(self, limit=None):
+        if limit is not None:
+            solph.constraints.generic_integral_limit(
+                self.model, keyword='emission_factor', limit=limit)
+        return self
+
+    def solve(self, with_duals=False, tee=True, logfile=None, solver=None):
+
+        logging.info("Optimising using {0}.".format(solver))
+
+        if with_duals:
+            self.model.receive_duals()
+
+        if self.debug:
+            filename = os.path.join(
+                solph.helpers.extend_basic_path("lp_files"), "reegis.lp"
+            )
+            logging.info("Store lp-file in {0}.".format(filename))
+            self.model.write(
+                filename, io_options={"symbolic_solver_labels": True}
+            )
+
+        self.model.solve(
+            solver=solver, solve_kwargs={"tee": tee, "logfile": logfile}
+        )
+        self.es.results["main"] = solph.processing.results(self.model)
+        self.es.results["meta"] = solph.processing.meta_results(self.model)
+        self.es.results["param"] = solph.processing.parameter_as_dict(self.es)
+        self.es.results["meta"]["scenario"] = self.scenario_info(solver)
+        self.es.results["meta"]["in_location"] = self.location
+        self.es.results["meta"]["file_date"] = datetime.datetime.fromtimestamp(
+            os.path.getmtime(self.location)
+        )
+        self.es.results["meta"]["solph_version"] = solph.__version__
+        self.es.results['emissions'] = \
+            self.model.integral_limit_emission_factor()
+        self.es.results['costs'] = self.model.objective()
+        self.results = self.es.results["main"]
 
 
 def load_csv_data(path):
@@ -99,11 +180,11 @@ def add_buses(table):
 
     Returns
     -------
-    nodes : list
-        A list with all oemof-solph Buses of the Dataframe table.
-    busd : dict
-        Dictionary with all oemof Bus object. Keys are equal to the label of
-        the bus.
+    tuple : a tuple containing:
+        - nodes ([list]): A list with all oemof-solph Buses of the
+            Dataframe table.
+        - busd ([dict]): Dictionary with all oemof Bus object.
+            Keys are equal to the label of the bus.
 
     Examples
     --------

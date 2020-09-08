@@ -76,6 +76,7 @@ setup(
     install_requires=[
         "pandas",
         "oemof-solph",
+        "deflex",
     ],
     extras_require={
         # eg:
