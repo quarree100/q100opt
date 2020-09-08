@@ -212,7 +212,6 @@ class Scenario:
     def scenario_info(self, solver_name):
         pass
 
-
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None):
         """
         Parameters
