@@ -8,6 +8,7 @@ SPDX-License-Identifier: MIT
 import datetime
 import logging
 import os
+from copy import deepcopy
 
 import oemof.solph as solph
 import pandas as pd
@@ -21,6 +22,8 @@ class DistrictScenario(Scenario):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.emission_limit = kwargs.get("emission_limit", None)
+        self.location = kwargs.get("location", None)
 
     def load_csv(self, path=None):
         if path is not None:
@@ -51,17 +54,28 @@ class DistrictScenario(Scenario):
     def table2es(self):
         if self.es is None:
             self.es = self.initialise_energy_system()
+        self.check_input()  #check again, if table_collection is given manually and not via csv read
         nodes = self.create_nodes()
         self.es.add(*nodes)
         return self
 
-    def add_emission_constr(self, limit=None):
-        if limit is not None:
-            solph.constraints.generic_integral_limit(
-                self.model, keyword='emission_factor', limit=limit)
+    def add_emission_constr(self):
+        if self.emission_limit is not None:
+            if self.model is not None:
+                solph.constraints.generic_integral_limit(
+                    self.model, keyword='emission_factor',
+                    limit=self.emission_limit)
+            else:
+                ValueError("The model must be created first.")
         return self
 
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None):
+
+        if self.es is None:
+            self.table2es()
+
+        self.create_model()
+        self.add_emission_constr()
 
         logging.info("Optimising using {0}.".format(solver))
 
@@ -84,11 +98,11 @@ class DistrictScenario(Scenario):
         self.es.results["meta"] = solph.processing.meta_results(self.model)
         self.es.results["param"] = solph.processing.parameter_as_dict(self.es)
         self.es.results["meta"]["scenario"] = self.scenario_info(solver)
-        self.es.results["meta"]["in_location"] = self.location
-        self.es.results["meta"]["file_date"] = datetime.datetime.fromtimestamp(
-            os.path.getmtime(self.location)
-        )
+        if self.location is not None:
+            self.es.results["meta"]["in_location"] = self.location
+        self.es.results['meta']["datetime"] = datetime.datetime.now()
         self.es.results["meta"]["solph_version"] = solph.__version__
+        self.es.results['meta']['emission_limit'] = self.emission_limit
         self.es.results['emissions'] = \
             self.model.integral_limit_emission_factor()
         self.es.results['costs'] = self.model.objective()
@@ -562,3 +576,121 @@ def add_transformer(tab, busd, timeseries=None):
         )
 
     return transformer
+
+
+def co2_optimisation(d_data_origin):
+
+    d_data = deepcopy(d_data_origin)
+
+    # 1. variable_costs <--> emission_factor
+    for _, tab in d_data.items():
+        if ('flow.variable_costs' or 'flow.emission_factor') in tab.columns:
+            var_costs = tab['flow.variable_costs'].copy()
+            co2 = tab['flow.emission_factor'].copy()
+
+            tab['flow.variable_costs'] = co2
+            tab['flow.emission_factor'] = var_costs
+
+        # check if there is excess, shortage is active
+        for key in ['excess', 'shortage']:
+            if key in tab.columns:
+                if tab[key].sum() > 0:
+                    ValueError('There is active excess/shortage. Please check'
+                               'if there are no costs involved.')
+
+    # 1b : Timeseries table
+    for col_name in list(d_data['Timeseries'].columns):
+        if 'variable_costs' in col_name:
+            prefix = col_name.split('.')[0]
+            cost_series = d_data['Timeseries'][col_name].copy()
+            co2_series = \
+                d_data['Timeseries'][prefix + '.emission_factor'].copy()
+            d_data['Timeseries'][col_name] = co2_series
+            d_data['Timeseries'][prefix + '.emission_factor'] = cost_series
+
+    # 2. investment costs to zero
+    for _, tab in d_data.items():
+        if 'invest.ep_costs' in tab.columns:
+            tab['invest.ep_costs'] = 0.0000001
+        if 'invest.offet' in tab.columns:
+            tab['invest.offset'] = 0
+
+    return d_data
+
+
+def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
+                      number=2, dist_type='linear', off_set=1):
+
+    # some base attributes
+    es_attr = {
+        'name': scenario_name,
+        'year': 2018,
+        'debug': False,
+    }
+
+    solve_attr = {
+        'solver': 'gurobi',
+        'with_duals': False,
+        'tee': True,
+    }
+
+    table_collection_costopt = load_csv_data(path=inputpath + scenario_name)
+    table_collection_co2opt = co2_optimisation(table_collection_costopt)
+
+    # 1. get min emission value
+
+    sc_co2opt = DistrictScenario(
+        emission_limit=1000000000,
+        table_collection=table_collection_co2opt,
+        location=inputpath,
+        **es_attr
+    )
+    sc_co2opt.solve(**solve_attr)
+    sc_co2opt.dump_es(filename=outputpath + scenario_name + '/co2opt')
+    e_min = sc_co2opt.es.results['meta']['objective']
+
+    # 2. get max emission value
+
+    sc_costopt = DistrictScenario(
+        emission_limit=1000000000,
+        table_collection=table_collection_costopt,
+        location=inputpath,
+        **es_attr
+    )
+    sc_costopt.solve(**solve_attr)
+    sc_costopt.dump_es(filename=outputpath + scenario_name + '/costopt')
+    e_max = sc_costopt.es.results['emissions']
+
+    # 3. calc emission limits
+
+    e_limits = []
+    if dist_type == 'linear':
+        e_start = e_min + off_set
+        interval = (e_max - e_start) / (number - 1)
+        for i in range(number):
+            e_limits.append(e_start + i*interval)
+
+    # 4. calc pareto front
+
+    df_pareto = pd.DataFrame()
+    for e in e_limits:
+        sc_costopt.emission_limit = e
+        sc_costopt.solve(**solve_attr)
+        e_name = str(int(round(e)))
+        sc_costopt.dump_es(
+            filename=outputpath + scenario_name + '/' + e_name
+        )
+        costs = sc_costopt.es.results['costs']
+        df_pareto= df_pareto.append(
+            pd.DataFrame(
+                [[e_name, e, costs]],
+                columns=['limit_name', 'emissions', 'costs']
+            ),
+            ignore_index=True,
+        )
+
+    # 5. save results of pareto front to output path as excel
+
+    df_pareto.to_excel(outputpath + scenario_name + '/pareto.xlsx')
+
+    return df_pareto
