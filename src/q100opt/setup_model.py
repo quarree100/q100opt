@@ -29,7 +29,6 @@ class DistrictScenario(Scenario):
         if path is not None:
             self.location = path
         self.table_collection = load_csv_data(self.location)
-        self.check_input()
         return self
 
     def check_input(self):
@@ -54,7 +53,7 @@ class DistrictScenario(Scenario):
     def table2es(self):
         if self.es is None:
             self.es = self.initialise_energy_system()
-        self.check_input()  #check again, if table_collection is given manually and not via csv read
+        self.check_input()
         nodes = self.create_nodes()
         self.es.add(*nodes)
         return self
@@ -681,7 +680,7 @@ def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
             filename=outputpath + scenario_name + '/' + e_name
         )
         costs = sc_costopt.es.results['costs']
-        df_pareto= df_pareto.append(
+        df_pareto = df_pareto.append(
             pd.DataFrame(
                 [[e_name, e, costs]],
                 columns=['limit_name', 'emissions', 'costs']
