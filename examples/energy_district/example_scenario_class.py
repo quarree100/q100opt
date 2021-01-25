@@ -8,12 +8,12 @@ table_collection = load_csv_data('data')
 ds = DistrictScenario(
     name='my_scenario',
     table_collection=table_collection,
-    number_of_time_steps=8760,
+    number_of_time_steps=500,
     year=2018,
-    emission_limit=505000,
+    emission_limit=50500,
 )
 
-ds.solve(solver='gurobi')
+ds.solve(solver='cbc')
 
 # POSTPROCESSING #######################
 
