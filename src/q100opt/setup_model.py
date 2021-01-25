@@ -630,6 +630,103 @@ def co2_optimisation(d_data_origin):
     return d_data
 
 
+class ParetoFront(DistrictScenario):
+    """Class for calculation pareto fronts with costs and emission."""
+    def __init__(self, emission_limits=None, number_of_points=2,
+                 dist_type='linear',
+                 off_set=1,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.number = number_of_points
+        self.dist_type = dist_type
+        self.off_set = off_set
+        self.solve_attr={
+            'solver': kwargs.get("solver", 'gurobi'),
+            'tee': kwargs.get("tee", True)
+        }
+        self.table_collection = kwargs.get('table_collection', None)
+        if self.table_collection is not {}:
+            self.table_collection_co2opt = co2_optimisation(
+                self.table_collection
+            )
+        else:
+            ValueError('Provide a table_collection!')
+        self.ds_min_co2 = self._get_min_emission()
+        self.ds_max_co2 = self._get_max_emssion()
+        self.e_min = self.ds_min_co2.es.results['meta']['objective']
+        self.e_max = self.ds_max_co2.es.results['emissions']
+        if emission_limits is not None:
+            self.emission_limit = emission_limits
+        else:
+            self.emission_limits = self._calc_emission_limits()
+        self.district_scenarios = {}
+        self.pareto_front = None
+
+    def _get_min_emission(self):
+        """Calculates the pareto point with minimum emission."""
+        sc_co2opt = DistrictScenario(
+            emission_limit=1000000000,
+            table_collection=self.table_collection_co2opt,
+        )
+        sc_co2opt.solve(**self.solve_attr)
+        return sc_co2opt
+
+    def _get_max_emssion(self):
+        sc_costopt = DistrictScenario(
+            emission_limit=1000000000,
+            table_collection=self.table_collection
+        )
+        sc_costopt.solve(**self.solve_attr)
+        return sc_costopt
+
+    def _calc_emission_limits(self):
+        """Calculates the emission limits of the pareto front."""
+        if self.dist_type == 'linear':
+            limits = []
+            e_start = self.e_min + self.off_set
+            interval = (self.e_max - e_start) / (self.number - 1)
+            for i in range(self.number):
+                limits.append(e_start + i * interval)
+        else:
+            raise ValueError(
+                'No other method than "linear" for calculation the emission'
+                ' limits implemented yet.'
+            )
+        return limits
+
+    def _get_pareto_results(self):
+        """Gets all cost an emission values of pareto front."""
+        index = list(self.district_scenarios.keys())
+        columns = ['costs', 'emissions']
+        df_pareto = pd.DataFrame(index=index, columns=columns)
+        for r, c in df_pareto.iterrows():
+            df_pareto.at[r, 'costs'] = \
+                self.district_scenarios[r].es.results['Costs']
+            df_pareto.at[r, 'emissions'] = \
+                self.district_scenarios[r].es.results['Emissions']
+        return df_pareto
+
+    def calc_pareto_front(self):
+        """Calculates the Pareto front for all emission limits."""
+        for e in self.emission_limits:
+            e_str = str(int(round(e)))
+            ds_name = self.name + '_' + e_str
+            ds = DistrictScenario(
+                name=ds_name,
+                emission_limit=e,
+                table_collection=self.table_collection,
+                number_of_time_steps=self.number_of_time_steps,
+                year=self.year,
+            )
+            ds.solve(**self.solve_attr)
+
+            self.district_scenarios.update(
+                {e_str: ds}
+            )
+
+        self.pareto_front = self._get_pareto_results()
+
+
 def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
                       number=2, dist_type='linear', off_set=1):
 
