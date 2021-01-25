@@ -29,7 +29,7 @@ class Scenario:
     def __init__(self, **kwargs):
         self.name = kwargs.get("name", "unnamed_scenario")
         self.table_collection = kwargs.get("table_collection", {})
-        self.year = kwargs.get("year", None)
+        self.year = kwargs.get("year", 2018)
         self.ignore_errors = kwargs.get("ignore_errors", False)
         self.round_values = kwargs.get("round_values", 0)
         self.model = kwargs.get("model", None)
