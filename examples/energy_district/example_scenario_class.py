@@ -19,5 +19,10 @@ ds.solve(solver='cbc')
 
 results = ds.es.results['main']
 
+# plots invests
 pp.plot_invest_flows(results)
 pp.plot_invest_storages(results)
+
+# plots time series
+pp.plot_storages_soc(results)
+pp.plot_buses(res=results, es=ds.es)
