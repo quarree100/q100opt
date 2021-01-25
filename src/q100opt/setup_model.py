@@ -656,7 +656,7 @@ class ParetoFront(DistrictScenario):
         self.e_min = self.ds_min_co2.es.results['meta']['objective']
         self.e_max = self.ds_max_co2.es.results['emissions']
         if emission_limits is not None:
-            self.emission_limit = emission_limits
+            self.emission_limits = emission_limits
         else:
             self.emission_limits = self._calc_emission_limits()
         self.district_scenarios = {}
