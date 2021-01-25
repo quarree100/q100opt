@@ -1,6 +1,5 @@
 import oemof.solph as solph
 import pandas as pd
-from matplotlib import pyplot as plt
 
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sinks
@@ -11,6 +10,7 @@ from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_transformer
 from q100opt.setup_model import check_active
 from q100opt.setup_model import load_csv_data
+import q100opt.postprocessing as pp
 
 # load data
 nd = load_csv_data('data')
@@ -49,26 +49,5 @@ om.solve(solver='gurobi', solve_kwargs={'tee': True})
 es.results['main'] = solph.processing.results(om)
 results = es.results['main']
 
-# plot investment results transformer
-flows_invest = [x for x in results.keys() if x[1] is not None
-                if hasattr(results[x]['scalars'], 'invest')
-                if isinstance(x[0], solph.Transformer)]
-
-invest_val = [results[x]['scalars']['invest'] for x in flows_invest]
-invest_lab = [x[0].label for x in flows_invest]
-
-plt.bar(invest_lab, invest_val)
-plt.ylabel('Installed Transformer Capacity [kW]')
-plt.show()
-
-# plot investment results storages
-store_invest = [x for x in results.keys() if x[1] is None
-                if hasattr(results[x]['scalars'], 'invest')
-                if isinstance(x[0], solph.GenericStorage)]
-
-invest_val_s = [results[x]['scalars']['invest'] for x in store_invest]
-invest_lab_s = [x[0].label for x in store_invest]
-
-plt.bar(invest_lab_s, invest_val_s)
-plt.ylabel('Installed Storage Capacity [kWh]')
-plt.show()
+pp.plot_invest_flows(results)
+pp.plot_invest_storages(results)
