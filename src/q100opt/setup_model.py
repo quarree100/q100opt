@@ -141,13 +141,7 @@ def load_csv_data(path):
 
         key = name.split('.csv')[0]
 
-        if key == 'Timeseries':
-            val = pd.read_csv(
-                os.path.join(path, name),
-                index_col=0,
-            )
-        else:
-            val = pd.read_csv(os.path.join(path, name))
+        val = pd.read_csv(os.path.join(path, name))
 
         dct.update([(key, val)])
 
@@ -469,7 +463,7 @@ def add_sinks_fix(tab, busd, timeseries):
                 label=cs['label'],
                 inputs={busd[cs['from']]: solph.Flow(
                     nominal_value=cs['nominal_value'],
-                    fix=timeseries[cs['label'] + '.fix']
+                    fix=timeseries[cs['label'] + '.fix'].values
                 )})
         )
 
