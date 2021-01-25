@@ -129,7 +129,15 @@ def load_csv_data(path):
     for name in os.listdir(path):
 
         key = name.split('.csv')[0]
-        val = pd.read_csv(os.path.join(path, name))
+
+        if key == 'Timeseries':
+            val = pd.read_csv(
+                os.path.join(path, name),
+                index_col=0,
+            )
+        else:
+            val = pd.read_csv(os.path.join(path, name))
+
         dct.update([(key, val)])
 
     return dct
