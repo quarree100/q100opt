@@ -24,6 +24,8 @@ class DistrictScenario(Scenario):
         super().__init__(**kwargs)
         self.emission_limit = kwargs.get("emission_limit", None)
         self.location = kwargs.get("location", None)
+        self.number_of_time_steps = \
+            kwargs.get("number_of_time_steps", 10)
 
     def load_csv(self, path=None):
         if path is not None:
@@ -36,6 +38,15 @@ class DistrictScenario(Scenario):
         self.table_collection = check_nonconvex_invest_type(
             self.table_collection)
         return self
+
+    def initialise_energy_system(self):
+        """Initialises the oemof.solph Energysystem."""
+        date_time_index = pd.date_range(
+            "1/1/{0}".format(self.year),
+            periods=self.number_of_time_steps,
+            freq="H"
+        )
+        self.es = solph.EnergySystem(timeindex=date_time_index)
 
     def create_nodes(self):
         nd = self.table_collection
@@ -52,11 +63,10 @@ class DistrictScenario(Scenario):
 
     def table2es(self):
         if self.es is None:
-            self.es = self.initialise_energy_system()
+            self.initialise_energy_system()
         self.check_input()
         nodes = self.create_nodes()
         self.es.add(*nodes)
-        return self
 
     def add_emission_constr(self):
         if self.emission_limit is not None:
@@ -102,10 +112,11 @@ class DistrictScenario(Scenario):
         self.es.results['meta']["datetime"] = datetime.datetime.now()
         self.es.results["meta"]["solph_version"] = solph.__version__
         self.es.results['meta']['emission_limit'] = self.emission_limit
-        self.es.results['emissions'] = \
-            self.model.integral_limit_emission_factor()
         self.es.results['costs'] = self.model.objective()
         self.results = self.es.results["main"]
+        if hasattr(self.model, 'integral_limit_emission_factor'):
+            self.es.results['emissions'] = \
+                self.model.integral_limit_emission_factor()
 
 
 def load_csv_data(path):
