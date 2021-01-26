@@ -115,6 +115,7 @@ class DistrictScenario(Scenario):
         self.es.results['meta']['emission_limit'] = self.emission_limit
         self.es.results['costs'] = self.model.objective()
         self.results = self.es.results["main"]
+        self.es.results['table_collection'] = self.table_collection
         if hasattr(self.model, 'integral_limit_emission_factor'):
             self.es.results['emissions'] = \
                 self.model.integral_limit_emission_factor()
@@ -159,8 +160,6 @@ class DistrictScenario(Scenario):
             df.to_excel(writer, name)
         writer.save()
         logging.info("Scenario saved as excel file to {0}".format(filename))
-
-
 
 
 class ParetoFront(DistrictScenario):
@@ -258,6 +257,14 @@ class ParetoFront(DistrictScenario):
             )
 
         self.pareto_front = self._get_pareto_results()
+
+    def store_results(self, path):
+        """Store all results of pareto front."""
+        for name, scenario in self.district_scenarios.items():
+            scenario.es.dump(
+                dpath=os.path.join(path),
+                filename=name,
+            )
 
 
 def load_csv_data(path):
