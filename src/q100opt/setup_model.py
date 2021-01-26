@@ -12,6 +12,7 @@ from copy import deepcopy
 
 import oemof.solph as solph
 import pandas as pd
+import dill as pickle
 
 from q100opt.external import Scenario
 
@@ -117,6 +118,49 @@ class DistrictScenario(Scenario):
         if hasattr(self.model, 'integral_limit_emission_factor'):
             self.es.results['emissions'] = \
                 self.model.integral_limit_emission_factor()
+
+    def plot(self):
+        pass
+
+    def tables_to_csv(self, path=None):
+        """Dump scenario into a csv-collection."""
+        if path is None:
+            bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
+            if not os.path.isdir(bpath):
+                os.mkdir(bpath)
+            dpath = os.path.join(bpath, "dumps")
+            if not os.path.isdir(dpath):
+                os.mkdir(dpath)
+            path = os.path.join(dpath, "csv_export")
+            if not os.path.isdir(path):
+                os.mkdir(path)
+
+        for name, df in self.table_collection.items():
+            name = name.replace(" ", "_") + ".csv"
+            filename = os.path.join(path, name)
+            df.to_csv(filename)
+        logging.info("Scenario saved as csv-collection to {0}".format(path))
+
+    def tables_to_excel(self, dpath=None, filename=None):
+        """Dump scenario into an excel-file."""
+        if dpath is None:
+            bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
+            if not os.path.isdir(bpath):
+                os.mkdir(bpath)
+            dpath = os.path.join(bpath, "dumps")
+            if not os.path.isdir(dpath):
+                os.mkdir(dpath)
+
+        if filename is None:
+            filename = "ds_dump.xlsx"
+
+        writer = pd.ExcelWriter(os.path.join(dpath, filename))
+        for name, df in sorted(self.table_collection.items()):
+            df.to_excel(writer, name)
+        writer.save()
+        logging.info("Scenario saved as excel file to {0}".format(filename))
+
+
 
 
 class ParetoFront(DistrictScenario):
