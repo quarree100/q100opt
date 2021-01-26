@@ -16,3 +16,5 @@ pf.pareto_front.plot(x='emissions', y='costs', kind='scatter')
 plt.xlabel('emissions')
 plt.ylabel('costs')
 plt.show()
+
+# pf.store_results()

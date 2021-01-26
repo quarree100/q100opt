@@ -258,8 +258,19 @@ class ParetoFront(DistrictScenario):
 
         self.pareto_front = self._get_pareto_results()
 
-    def store_results(self, path):
+    def store_results(self, path=None):
         """Store all results of pareto front."""
+        if path is None:
+            bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
+            if not os.path.isdir(bpath):
+                os.mkdir(bpath)
+            dpath = os.path.join(bpath, "dumps")
+            if not os.path.isdir(dpath):
+                os.mkdir(dpath)
+            path = os.path.join(dpath, "pareto")
+            if not os.path.isdir(path):
+                os.mkdir(path)
+
         for name, scenario in self.district_scenarios.items():
             scenario.es.dump(
                 dpath=os.path.join(path),
