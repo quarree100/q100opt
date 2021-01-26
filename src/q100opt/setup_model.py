@@ -12,7 +12,6 @@ from copy import deepcopy
 
 import oemof.solph as solph
 import pandas as pd
-import dill as pickle
 
 from q100opt.external import Scenario
 
@@ -179,7 +178,7 @@ class DistrictScenario(Scenario):
 
         self.es.dump(dpath=path, filename=filename)
         logging.info("Energy system of DistrictScenario saved as dump"
-                     " to {0} as {0}".format(path, filename))
+                     " to {} as {}".format(path, filename))
 
     def restore_des(self, path=None, filename=None):
         pass

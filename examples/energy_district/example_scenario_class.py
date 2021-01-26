@@ -37,14 +37,10 @@ pp.plot_invest_storages(results)
 # ds.dump()
 
 # plot esys graph I (Luis)
-try:
-    import pygraphviz
-    grph = create_nx_graph(ds.es)
-    pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
-    pp.plot_graph(pos, grph)
-    logging.info('Energy system Graph OK.')
-except ImportError:
-    logging.info('Module pygraphviz not found: Graph was not plotted.')
+grph = create_nx_graph(ds.es)
+pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
+pp.plot_graph(pos, grph)
+logging.info('Energy system Graph OK.')
 
 # plot esys graph II (oemof examples)
 graph = create_nx_graph(ds.es)

@@ -3,6 +3,11 @@ import oemof.solph as solph
 import networkx as nx
 import logging
 
+try:
+    import pygraphviz
+except ImportError:
+    logging.info('Module pygraphviz not found: Graph was not plotted.')
+
 
 def plot_invest_flows(results):
     """Plots all investment flows in a bar plot."""
@@ -118,14 +123,7 @@ def draw_graph(
         "arrows": arrows,
     }
 
-    # try to use pygraphviz for graph layout
-    try:
-        import pygraphviz
-
-        pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog=layout)
-    except ImportError:
-        logging.error("Module pygraphviz not found, I won't plot the graph.")
-        return
+    pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog=layout)
 
     # draw graph
     nx.draw(grph, pos=pos, **options)
