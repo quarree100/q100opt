@@ -212,7 +212,6 @@ class ParetoFront(DistrictScenario):
             'solver': kwargs.get("solver", 'gurobi'),
             'tee': kwargs.get("tee", True)
         }
-        self.table_collection = kwargs.get('table_collection', None)
         if self.table_collection is not {}:
             self.table_collection_co2opt = co2_optimisation(
                 self.table_collection
@@ -235,6 +234,8 @@ class ParetoFront(DistrictScenario):
         sc_co2opt = DistrictScenario(
             emission_limit=1000000000,
             table_collection=self.table_collection_co2opt,
+            number_of_time_steps=self.number_of_time_steps,
+            year=self.year,
         )
         sc_co2opt.solve(**self.solve_attr)
         return sc_co2opt
@@ -242,7 +243,9 @@ class ParetoFront(DistrictScenario):
     def _get_max_emssion(self):
         sc_costopt = DistrictScenario(
             emission_limit=1000000000,
-            table_collection=self.table_collection
+            table_collection=self.table_collection,
+            number_of_time_steps=self.number_of_time_steps,
+            year=self.year,
         )
         sc_costopt.solve(**self.solve_attr)
         return sc_costopt
