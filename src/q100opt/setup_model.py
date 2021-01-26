@@ -93,7 +93,7 @@ class DistrictScenario(Scenario):
 
         if self.debug:
             filename = os.path.join(
-                solph.helpers.extend_basic_path("lp_files"), "reegis.lp"
+                solph.helpers.extend_basic_path("lp_files"), "q100opt.lp"
             )
             logging.info("Store lp-file in {0}.".format(filename))
             self.model.write(
@@ -129,7 +129,7 @@ class ParetoFront(DistrictScenario):
         self.number = number_of_points
         self.dist_type = dist_type
         self.off_set = off_set
-        self.solve_attr={
+        self.solve_attr = {
             'solver': kwargs.get("solver", 'gurobi'),
             'tee': kwargs.get("tee", True)
         }
@@ -725,9 +725,6 @@ def co2_optimisation(d_data_origin):
             tab['invest.offset'] = 0
 
     return d_data
-
-
-
 
 
 def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
