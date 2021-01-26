@@ -181,6 +181,23 @@ class DistrictScenario(Scenario):
         logging.info("Energy system of DistrictScenario saved as dump"
                      " to {0} as {0}".format(path, filename))
 
+    def restore_des(self, path=None, filename=None):
+        pass
+    #     """Restores DistrictScenario from dumped EnergySystem."""
+    #     if path is None:
+    #         path = os.path.join(
+    #             os.path.expanduser("~"), ".q100opt", "dumps", "energysystem"
+    #         )
+    #
+    #     if filename is None:
+    #         filename = "ds_dump.oemof"
+    #
+    #     es_restore = solph.EnergySystem()
+    #     es_restore.restore(dpath=path, filename=filename)
+    #     logging.info(
+    #         "Restoring EnergySystem will overwrite existing attributes."
+    #     )
+
 
 class ParetoFront(DistrictScenario):
     """Class for calculation pareto fronts with costs and emission."""
