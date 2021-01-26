@@ -161,6 +161,26 @@ class DistrictScenario(Scenario):
         writer.save()
         logging.info("Scenario saved as excel file to {0}".format(filename))
 
+    def dump(self, path=None, filename=None):
+        """Dump energysystem of District scenario."""
+        if path is None:
+            bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
+            if not os.path.isdir(bpath):
+                os.mkdir(bpath)
+            dpath = os.path.join(bpath, "dumps")
+            if not os.path.isdir(dpath):
+                os.mkdir(dpath)
+            path = os.path.join(dpath, "energysystem")
+            if not os.path.isdir(path):
+                os.mkdir(path)
+
+        if filename is None:
+            filename = "ds_dump.oemof"
+
+        self.es.dump(dpath=path, filename=filename)
+        logging.info("Energy system of DistrictScenario saved as dump"
+                     " to {0} as {0}".format(path, filename))
+
 
 class ParetoFront(DistrictScenario):
     """Class for calculation pareto fronts with costs and emission."""

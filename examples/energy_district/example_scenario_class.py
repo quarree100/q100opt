@@ -32,22 +32,22 @@ pp.plot_invest_storages(results)
 # ds.tables_to_excel()
 
 print('dump district energy system')
+ds.dump()
 
-import os
+# import os
+# ds.es.dump(dpath=os.path.dirname(os.path.abspath(__file__)),
+#            filename='dump_district_es.dump')
 
-ds.es.dump(dpath=os.path.dirname(os.path.abspath(__file__)),
-           filename='dump_district_es.dump')
-
-import oemof.solph as solph
-
-es_restore = solph.EnergySystem()
-
-es_restore.restore(
-    dpath=os.path.dirname(os.path.abspath(__file__)),
-    filename='dump_district_es.dump'
-)
-
-tc = es_restore.results['Table collection']
+# import oemof.solph as solph
+#
+# es_restore = solph.EnergySystem()
+#
+# es_restore.restore(
+#     dpath=os.path.dirname(os.path.abspath(__file__)),
+#     filename='dump_district_es.dump'
+# )
+#
+# tc = es_restore.results['Table collection']
 
 
 # ds.dump()
