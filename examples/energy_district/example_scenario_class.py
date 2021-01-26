@@ -1,7 +1,9 @@
 from q100opt.setup_model import load_csv_data
 from q100opt.setup_model import DistrictScenario
 from q100opt import postprocessing as pp
-
+from oemof.network.graph import create_nx_graph
+import logging
+import networkx as nx
 
 table_collection = load_csv_data('data')
 
@@ -31,29 +33,25 @@ pp.plot_invest_storages(results)
 # ds.tables_to_csv()
 # ds.tables_to_excel()
 
-print('dump district energy system')
-ds.dump()
-
-# import os
-# ds.es.dump(dpath=os.path.dirname(os.path.abspath(__file__)),
-#            filename='dump_district_es.dump')
-
-# import oemof.solph as solph
-#
-# es_restore = solph.EnergySystem()
-#
-# es_restore.restore(
-#     dpath=os.path.dirname(os.path.abspath(__file__)),
-#     filename='dump_district_es.dump'
-# )
-#
-# tc = es_restore.results['Table collection']
-
-
+# print('dump district energy system')
 # ds.dump()
-# ds_restore = DistrictScenario()
 
-# logging.info("Restore the energy system and the results.")
-# energysystem = solph.EnergySystem()
-# energysystem.restore(dpath=None, filename=None)
+# plot esys graph I (Luis)
+try:
+    import pygraphviz
+    grph = create_nx_graph(ds.es)
+    pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
+    pp.plot_graph(pos, grph)
+    logging.info('Energy system Graph OK.')
+except ImportError:
+    logging.info('Module pygraphviz not found: Graph was not plotted.')
 
+# plot esys graph II (oemof examples)
+graph = create_nx_graph(ds.es)
+pp.draw_graph(
+    grph=graph,
+    plot=True,
+    layout="neato",
+    node_size=1000,
+    node_color={"b_heat_gen": "#cd3333", "b_el_ez": "#cd3333"},
+)
