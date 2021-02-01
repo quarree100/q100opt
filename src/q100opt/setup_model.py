@@ -277,7 +277,7 @@ class ParetoFront(DistrictScenario):
                 self.district_scenarios[r].es.results['Emissions']
         return df_pareto
 
-    def calc_pareto_front(self):
+    def calc_pareto_front(self, dump_esys=False):
         """Calculates the Pareto front for all emission limits."""
         for e in self.emission_limits:
             e_str = str(int(round(e)))
@@ -295,9 +295,18 @@ class ParetoFront(DistrictScenario):
                 {e_str: ds}
             )
 
+            if dump_esys:
+
+                esys_path = os.path.join(self.results_fn, self.name,
+                                         "energy_system")
+                if not os.path.isdir(esys_path):
+                    os.mkdir(esys_path)
+
+                ds.dump(path=esys_path, filename=e_str)
+
         self.pareto_front = self._get_pareto_results()
 
-    def store_results(self, path=None):
+    def store_results(self, path=None, esys=False):
         """Store all results of pareto front."""
         if path is None:
             bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
@@ -310,11 +319,36 @@ class ParetoFront(DistrictScenario):
             if not os.path.isdir(path):
                 os.mkdir(path)
 
-        for name, scenario in self.district_scenarios.items():
-            scenario.es.dump(
-                dpath=os.path.join(path),
-                filename=name,
-            )
+        # dump energy systems
+        esys_path = os.path.join(path, "energy_system")
+        if not os.path.isdir(esys_path):
+            os.mkdir(esys_path)
+
+        if esys:
+            for name, scenario in self.district_scenarios.items():
+                scenario.es.dump(
+                    dpath=esys_path,
+                    filename=name,
+                )
+            logging.info("EnerySystems dumped to {0}".format(esys_path))
+
+        # store table_collection
+        tables_path = os.path.join(path, "input_tables")
+        if not os.path.isdir(tables_path):
+            os.mkdir(tables_path)
+
+        for name, df in self.table_collection.items():
+            name = name.replace(" ", "_") + ".csv"
+            filename = os.path.join(tables_path, name)
+            df.to_csv(filename)
+        logging.info(
+            "Scenario saved as csv-collection to {0}".format(tables_path))
+
+        # store pareto results
+        path_pareto = os.path.join(path, 'pareto_results.xlsx')
+        self.pareto_front.to_excel(path_pareto)
+        logging.info(
+            "Pareto front table saved as xlsx to {0}".format(path_pareto))
 
 
 def load_csv_data(path):
