@@ -350,6 +350,10 @@ class ParetoFront(DistrictScenario):
         logging.info(
             "Pareto front table saved as xlsx to {0}".format(path_pareto))
 
+    def restore_from_results(self, path):
+        """Restores a Pareto front class from a result folder."""
+        pass
+
 
 def load_csv_data(path):
     """Loading csv data.
