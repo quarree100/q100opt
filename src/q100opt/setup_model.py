@@ -492,6 +492,9 @@ def get_invest_obj(row):
     the prefix`invest.`, if attribute 'investment' occurs, and if attribute
     `investment` is set to 1.
 
+    If the invest attribute "offset" is given and if it is > 0, the invest
+    attribute "nonconvex=True" is added.
+
     Parameters
     ----------
     row : pd.Series
@@ -512,6 +515,10 @@ def get_invest_obj(row):
                        if x.split('.')[0] == 'invest']
             for ia in ia_list:
                 invest_attr[ia] = row['invest.' + ia]
+
+            if 'offset' in ia_list and invest_attr['offset'] > 0:
+                invest_attr['nonconvex'] = True
+
             invest_object = solph.Investment(**invest_attr)
 
         else:
