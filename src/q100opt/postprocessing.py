@@ -187,7 +187,110 @@ def get_invest_table(results, keys):
 
 
 def analyse_opex(results):
+    """Analysis and Summary of variable costs of the EnergySystem."""
+
+
     return pd.DataFrame()
+
+
+def get_attr_flows(results, key='variable_costs'):
+    """
+    Return all flows of an EnergySystem for a given attribute,
+    which is not zero.
+
+    Parameters
+    ----------
+    results : dict
+        Results dicionary of the oemof.solph optimisation including the
+        Parameters with key 'param'.
+    key : str
+
+    Returns
+    -------
+    list : List of flows, where a non zero attribute value is given either
+           at the 'scalars' or 'sequences'.
+    """
+    param = results['Param']
+
+    list_keys = list(param.keys())
+
+    var_scalars = [
+        x for x in list_keys
+        if key in param[x]['scalars'].keys()
+        if abs(param[x]['scalars'][key]) > 0
+    ]
+
+    var_sequences = [
+        x for x in list_keys
+        if key in param[x]['sequences'].keys()
+        if abs(param[x]['sequences'][key].sum()) > 0
+    ]
+
+    var_cost_flows = var_scalars + var_sequences
+
+    return var_cost_flows
+
+
+def get_attr_flow_results(des_results, key='variable_costs'):
+    """
+    Return the parameter and flow results for all flows of an EnergySystem
+    for a given attribute, which is not zero.
+
+    Parameters
+    ----------
+    des_results : dict
+        Results of district energy system. Must have the keys: 'main', 'param'.
+    key : str
+        Flow attribute.
+
+    Returns
+    -------
+    pd.DataFrame : Multiindex DataFrame.
+        - Index : Timeindex of oemof.solph.EnergySystem.
+        - First column index level: <from>-<to>, where from an to are the
+          labels of the Nodes.
+        - Second column index level:
+            - attribute parameter
+            - resulting flow value
+            - product of parameter and flow column
+    """
+    attr_flows = get_attr_flows(des_results, key=key)
+
+    param = des_results['Param']
+    results = des_results['Main']
+
+    df = pd.DataFrame(index=next(iter(results.values()))['sequences'].index)
+
+    len_index = len(df)
+
+    for flow in attr_flows:
+
+        label = flow[0].label + '-' + flow[1].label
+
+        # 1) get parameters
+        if key in param[flow]['scalars'].keys():
+            df[(label, key)] = param[flow]['scalars'][key]
+        else:
+            df[(label, key)] = param[flow]['sequences'][key].values[:len_index]
+
+        # 2) get flow results
+        df[(label, 'flow')] = results[flow]["sequences"].values
+
+        # 3) calc a * b
+        if key == 'variable_costs':
+            key_product = 'costs'
+        elif key == 'emission_factor':
+            key_product = 'emissions'
+        else:
+            key_product = 'product'
+
+        df[(label, key_product)] = df[(label, key)] * df[(label, 'flow')]
+
+        df.columns = pd.MultiIndex.from_tuples(
+            list(df.columns), names=('from-to', 'value')
+        )
+
+    return df
 
 
 def plot_invest_flows(results):
@@ -250,17 +353,9 @@ def plot_storages_soc(res=None):
         plt.show()
 
 
-def draw_graph(
-    grph,
-    edge_labels=True,
-    node_color="#AFAFAF",
-    edge_color="#CFCFCF",
-    plot=True,
-    node_size=2000,
-    with_labels=True,
-    arrows=True,
-    layout="neato",
-):
+def draw_graph(grph, edge_labels=True, node_color="#AFAFAF",
+               edge_color="#CFCFCF", plot=True, node_size=2000,
+               with_labels=True, arrows=True, layout="neato"):
     """
     Source: https://github.com/oemof/oemof-examples/blob/master/oemof_examples/
     oemof.solph/v0.4.x/excel_reader/dispatch.py
