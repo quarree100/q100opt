@@ -11,6 +11,22 @@ except ImportError:
     logging.info('Module pygraphviz not found: Graph was not plotted.')
 
 
+def analyse_emissions(results):
+    """Performs analysis of emissions.
+
+    Parameters
+    ----------
+    results : dict
+        Results of oemof.solph Energysystem.
+
+    Returns
+    -------
+    dict :  Table with detailed emission analysis,
+            containing 2 keys: 'summary' and 'sequences'.
+    """
+    return analyse_flow_attribute(results, keyword='emission_factor')
+
+
 def analyse_costs(results):
     """Performs a cost analysis.
 
@@ -22,11 +38,11 @@ def analyse_costs(results):
     Returns
     -------
     dict :  Table with detailed cost summary,
-            containing two keys: 'capex' and 'opex'.
+            containing 3 keys: 'capex', 'opex' and 'all'.
     """
     costs = {
         'capex': analyse_capex(results),
-        'opex': analyse_opex(results),
+        'opex': analyse_flow_attribute(results, keyword='variable_costs'),
     }
 
     capex = pd.concat({'capex': costs['capex']}, names=['cost_type'])
@@ -192,16 +208,39 @@ def get_invest_table(results, keys):
     return df
 
 
-def analyse_opex(des_results):
-    """Analysis and Summary of variable costs of the EnergySystem."""
+def analyse_flow_attribute(des_results, keyword='variable_costs'):
+    """Analysis and Summary of flow attribute keyword of the EnergySystem.
+
+    Parameters
+    ----------
+    des_results : q100opt.DistrictScenario.results
+        The results Dictionary of the District Scenario class
+        (a dictionary containing the processed oemof.solph.results
+        with the key 'main' and the oemof.solph parameters
+        with the key 'param'.)
+    keyword : str
+        Keyword for that values are analyzed,
+        e.g. variable_costs or emission_factor.
+
+    Returns
+    -------
+    dict :  All relevant data with variable_costs.
+            Keys of dictionary: 'summary' and 'sequences'.
+    """
     param = des_results['param']
     results = des_results['main']
-
-    keyword = 'variable_costs'
 
     var_cost_flows = get_attr_flows(des_results, key=keyword)
     df = pd.DataFrame(index=next(iter(results.values()))['sequences'].index)
     len_index = len(df)
+
+    # define columns of result dataframe
+    if keyword == 'variable_costs':
+        key_product = 'costs'
+    elif keyword == 'emission_factor':
+        key_product = 'emissions'
+    else:
+        key_product = 'product'
 
     for flow in var_cost_flows:
 
@@ -231,13 +270,6 @@ def analyse_opex(des_results):
         df[(category, label, 'flow')] = results[flow]["sequences"].values
 
         # 3) calc a * b
-        if keyword == 'variable_costs':
-            key_product = 'costs'
-        elif keyword == 'emission_factor':
-            key_product = 'emissions'
-        else:
-            key_product = 'product'
-
         df[(category, label, key_product)] = \
             df[(category, label, keyword)] * df[(category, label, 'flow')]
 
@@ -247,16 +279,17 @@ def analyse_opex(des_results):
 
     df.sort_index(axis=1, inplace=True)
 
-    df_sum = df.iloc[:, df.columns.isin(['flow', 'costs'], level=2)].sum()
+    df_sum = df.iloc[:, df.columns.isin(['flow', key_product], level=2)].sum()
 
     df_summary = df_sum.unstack(level=2)
 
-    df_summary['var_costs_av_flow'] = df_summary['costs'] / df_summary['flow']
+    df_summary['var_' + key_product + '_av_flow'] = \
+        df_summary[key_product] / df_summary['flow']
 
     df_mean = \
-        df.iloc[:, df.columns.get_level_values(2) == 'variable_costs']\
+        df.iloc[:, df.columns.get_level_values(2) == keyword]\
             .mean().unstack(level=2).rename(
-            columns={"variable_costs": "var_costs_av_param"})
+            columns={keyword: 'var_' + key_product + '_av_param'})
 
     df_summary = df_summary.join(df_mean)
 
