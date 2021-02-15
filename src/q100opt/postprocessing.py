@@ -2,6 +2,8 @@ from matplotlib import pyplot as plt
 import oemof.solph as solph
 import networkx as nx
 import logging
+import pandas as pd
+import numpy as np
 
 try:
     import pygraphviz
@@ -9,12 +11,189 @@ except ImportError:
     logging.info('Module pygraphviz not found: Graph was not plotted.')
 
 
+def analyse_costs(results):
+    """Performs a cost analysis.
+
+    Parameters
+    ----------
+    results : dict
+        Results of oemof.solph Energysystem.
+
+    Returns
+    -------
+    dict :  Table with detailed cost summary,
+            containing two keys: 'capex' and 'opex'.
+    """
+    costs = {
+        'capex': analyse_capex(results),
+        'opex': analyse_opex(results),
+    }
+
+    return costs
+
+
+def analyse_capex(results):
+    """Analysis and Summary of the investment costs of the EnergySystem.
+
+    Parameters
+    ----------
+    results : q100opt.DistrictScenario.results
+        The results Dictionary of the District Scenario class
+        (a dictionary containing the processed oemof.solph.results
+        with the key 'main' and the oemof.solph parameters
+        with the key 'param'.)
+
+    Returns
+    -------
+    pd.DataFrame :
+        The table contains both the parameter and result value
+        of the Investment objects.
+         - Columns: 'ep_costs', 'offset', 'invest_value' and 'costs'
+         - Index:
+            - First level: 'converter' or 'storage
+              (Converter are all flows comming from a solph.Transformer or
+              a solph.Source)
+            - Second level: Label of the corresponding oemof.solph component:
+              in case of 'converter', the label from which the flow is comming.
+              in case of 'storage', the label of the GenericStorage.
+    """
+    # energy converter units
+    df_converter = get_invest_converter_table(results)
+    df_converter['category'] = 'converter'
+
+    # energy storages units
+    df_storages = get_invest_storage_table(results)
+    df_storages['category'] = 'storage'
+
+    df_result = pd.concat([df_converter, df_storages])
+
+    df_result.index = pd.MultiIndex.from_frame(
+        df_result[['category', 'label']])
+    df_result.drop(df_result[['category', 'label']], axis=1, inplace=True)
+
+    return df_result
+
+
+def get_invest_converter(results):
+    """
+    Gets the keys of investment converter units of the energy system.
+    Only the flows from a solph.Transformer or a solph.Source are considered.
+    """
+    return [
+        x for x in results.keys()
+        if hasattr(results[x]['scalars'], 'invest')
+        if isinstance(x[0], solph.Transformer) or
+           isinstance(x[0], solph.Source)
+    ]
+
+
+def get_invest_storages(results):
+    """
+    Gets the investment storages of the energy system.
+    Only the investment of the solph.components.GenericStorage is considered,
+    and not a investment in the in- or outflow.
+    """
+    return [
+        x for x in results.keys()
+        if x[1] is None
+        if hasattr(results[x]['scalars'], 'invest')
+        if isinstance(x[0], solph.components.GenericStorage)
+    ]
+
+
+def get_invest_converter_table(results):
+    """
+    Returns a table with a summary of investment flows of energy converter
+    units. These are oemof.solph.Flows comming from a solph.Transformer or
+    a solph.Source.
+
+    Parameters
+    ----------
+    results : q100opt.DistrictScenario.results
+        The results Dictionary of the District Scenario class
+        (a dictionary containing the processed oemof.solph.results
+        with the key 'main' and the oemof.solph parameters
+        with the key 'param'.)
+
+    Returns
+    -------
+    pd.DataFrame :
+        The table contains both the parameter and result value
+        of the Investment objects.
+         - Columns: 'label', 'ep_costs', 'offset', 'invest_value' and 'costs'
+           The 'label' column is the label of the corresponding
+           oemof.solph.Transformer or Source, from that the flow is coming.
+    """
+    converter_units = get_invest_converter(results['main'])
+    return get_invest_table(results, converter_units)
+
+
+def get_invest_storage_table(results):
+    """
+    Returns a table with a summary of investment flows of all
+    oemof.solph.components.GeneicStorage units.
+
+    results : q100opt.DistrictScenario.results
+        The results Dictionary of the District Scenario class
+        (a dictionary containing the processed oemof.solph.results
+        with the key 'main' and the oemof.solph parameters
+        with the key 'param'.)
+
+    Returns
+    -------
+    pd.DataFrame :
+        The table contains both the parameter and result value
+        of the Investment objects.
+         - Columns: 'label', 'ep_costs', 'offset', 'invest_value' and 'costs'
+           The 'label' column is the label of the corresponding oemof.solph
+           label, which is the label from which the flow is coming.
+    """
+    storages = get_invest_storages(results['main'])
+    return get_invest_table(results, storages)
+
+
+def get_invest_table(results, keys):
+    """
+    Returns the investment data for a list of "results keys".
+
+    Parameters
+    ----------
+    results : dict
+        oemof.solph results dictionary (results['main])
+    keys : list
+        Keys of flows and nodes
+
+    Returns
+    -------
+    pd.DataFrame :
+        The table contains both the parameter and result value
+        of the Investment objects.
+         - Columns: 'label', 'ep_costs', 'offset', 'invest_value' and 'costs'
+           The 'label' column is the label of the corresponding oemof.solph
+           label, which is the label from which the flow is coming.
+    """
+    invest_lab = [x[0].label for x in keys]
+
+    df = pd.DataFrame(data=invest_lab, columns=['label'])
+    df['ep_costs'] = [results['param'][x]['scalars']['investment_ep_costs']
+                      for x in keys]
+    df['offset'] = [results['param'][x]['scalars']['investment_offset']
+                    for x in keys]
+    df['invest_value'] = [results['main'][x]['scalars']['invest']
+                          for x in keys]
+    df['costs'] = df['invest_value'] * df['ep_costs'] + \
+                  df['offset'] * np.sign(df['invest_value'])
+    return df
+
+
+def analyse_opex(results):
+    return pd.DataFrame()
+
+
 def plot_invest_flows(results):
     """Plots all investment flows in a bar plot."""
 
-    flows_invest = [x for x in results.keys() if x[1] is not None
-                    if hasattr(results[x]['scalars'], 'invest')
-                    if isinstance(x[0], solph.Transformer)]
+    flows_invest = get_invest_converter(results)
 
     invest_val = [results[x]['scalars']['invest'] for x in flows_invest]
     invest_lab = [x[0].label for x in flows_invest]
@@ -28,9 +207,7 @@ def plot_invest_flows(results):
 def plot_invest_storages(results):
     """Plots investment storages as bar plot.s"""
 
-    store_invest = [x for x in results.keys() if x[1] is None
-                    if hasattr(results[x]['scalars'], 'invest')
-                    if isinstance(x[0], solph.GenericStorage)]
+    store_invest = get_invest_storages(results)
 
     invest_val_s = [results[x]['scalars']['invest'] for x in store_invest]
     invest_lab_s = [x[0].label for x in store_invest]
