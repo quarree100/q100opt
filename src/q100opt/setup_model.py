@@ -216,6 +216,21 @@ class DistrictScenario(Scenario):
             results=self.results
         )
 
+        total_costs = self.results['cost_analysis']['all']['costs'].sum()
+
+        objective_value = self.results['meta']['objective']
+
+        if abs(total_costs - objective_value) > 0.01:
+            raise ValueError(
+                "The objective value and the re-calculated costs do not match!"
+            )
+        else:
+            logging.info(
+                "Check passed: Objective value and recalculated costs match."
+            )
+
+        logging.info("Economic analysis completed.")
+
 
 def load_district_scenario(path, filename):
     """Load a TableBuilder class."""

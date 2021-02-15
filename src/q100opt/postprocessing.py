@@ -29,6 +29,12 @@ def analyse_costs(results):
         'opex': analyse_opex(results),
     }
 
+    capex = pd.concat({'capex': costs['capex']}, names=['cost_type'])
+    opex = pd.concat({'opex': costs['opex']['summary']}, names=['cost_type'])
+    all = pd.concat([capex, opex])
+
+    costs.update({'all': all})
+
     return costs
 
 
@@ -186,11 +192,76 @@ def get_invest_table(results, keys):
     return df
 
 
-def analyse_opex(results):
+def analyse_opex(des_results):
     """Analysis and Summary of variable costs of the EnergySystem."""
+    param = des_results['param']
+    results = des_results['main']
 
+    keyword = 'variable_costs'
 
-    return pd.DataFrame()
+    var_cost_flows = get_attr_flows(des_results, key=keyword)
+    df = pd.DataFrame(index=next(iter(results.values()))['sequences'].index)
+    len_index = len(df)
+
+    for flow in var_cost_flows:
+
+        if isinstance(flow[0], solph.Source):
+            category = 'source'
+            label = flow[0].label
+        elif isinstance(flow[0], solph.Transformer):
+            category = 'converter'
+            label = flow[0].label
+        elif isinstance(flow[1], solph.Sink):
+            category = 'sink'
+            label = flow[1].label
+        else:
+            label = flow[0].label + '-' + flow[1].label
+            category = 'unknown'
+            logging.warning(
+                "Flow/Node category of {} not specified!".format(label)
+            )
+
+        if keyword in param[flow]['scalars'].keys():
+            df[(category, label, keyword)] = param[flow]['scalars'][keyword]
+        else:
+            df[(category, label, keyword)] = \
+                param[flow]['sequences'][keyword].values[:len_index]
+
+        # 2) get flow results
+        df[(category, label, 'flow')] = results[flow]["sequences"].values
+
+        # 3) calc a * b
+        if keyword == 'variable_costs':
+            key_product = 'costs'
+        elif keyword == 'emission_factor':
+            key_product = 'emissions'
+        else:
+            key_product = 'product'
+
+        df[(category, label, key_product)] = \
+            df[(category, label, keyword)] * df[(category, label, 'flow')]
+
+        df.columns = pd.MultiIndex.from_tuples(
+            list(df.columns), names=('category', 'label', 'value')
+        )
+
+    df.sort_index(axis=1, inplace=True)
+
+    df_sum = df.iloc[:, df.columns.isin(['flow', 'costs'], level=2)].sum()
+
+    df_summary = df_sum.unstack(level=2)
+
+    df_summary['var_costs_av_flow'] = df_summary['costs'] / df_summary['flow']
+
+    df_mean = \
+        df.iloc[:, df.columns.get_level_values(2) == 'variable_costs']\
+            .mean().unstack(level=2).rename(
+            columns={"variable_costs": "var_costs_av_param"})
+
+    df_summary = df_summary.join(df_mean)
+
+    return {'summary': df_summary,
+            'sequences': df}
 
 
 def get_attr_flows(results, key='variable_costs'):
@@ -291,6 +362,23 @@ def get_attr_flow_results(des_results, key='variable_costs'):
         )
 
     return df
+
+
+def get_sum_flow(results, label):
+    """Return the sum of a flow."""
+    return solph.views.node(results, label)["sequences"].sum()[0]
+
+
+def get_label_sources(results):
+    """Return a list of sources of the results of an solph.Energysystem."""
+    return [x[0].label for x in results.keys()
+            if isinstance(x[0], solph.Source)]
+
+
+def get_label_sinks(results):
+    """Return a list of sinks of the results of an solph.Energysystem."""
+    return [x[1].label for x in results.keys()
+            if isinstance(x[1], solph.Sink)]
 
 
 def plot_invest_flows(results):
