@@ -15,6 +15,7 @@ import pandas as pd
 import pickle
 
 from q100opt.external import Scenario
+from q100opt.postprocessing import analyse_costs
 
 
 class DistrictScenario(Scenario):
@@ -208,6 +209,12 @@ class DistrictScenario(Scenario):
     #     logging.info(
     #         "Restoring EnergySystem will overwrite existing attributes."
     #     )
+
+    def analyse_costs(self):
+        """Performs a cost analysis."""
+        self.results['cost_analysis'] = analyse_costs(
+            results=self.results
+        )
 
 
 def load_district_scenario(path, filename):
