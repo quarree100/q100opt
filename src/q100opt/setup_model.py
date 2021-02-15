@@ -12,6 +12,7 @@ from copy import deepcopy
 
 import oemof.solph as solph
 import pandas as pd
+import pickle
 
 from q100opt.external import Scenario
 
@@ -22,6 +23,7 @@ class DistrictScenario(Scenario):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.input_path = kwargs.get("input_path", None)
         self.emission_limit = kwargs.get("emission_limit", None)
         self.location = kwargs.get("location", None)
         self.number_of_time_steps = \
@@ -113,11 +115,12 @@ class DistrictScenario(Scenario):
         self.es.results["meta"]["solph_version"] = solph.__version__
         self.es.results['meta']['emission_limit'] = self.emission_limit
         self.es.results['costs'] = self.model.objective()
-        self.results = self.es.results["main"]
         self.es.results['table_collection'] = self.table_collection
         if hasattr(self.model, 'integral_limit_emission_factor'):
             self.es.results['emissions'] = \
                 self.model.integral_limit_emission_factor()
+        self.results = self.es.results
+        self.results['timeindex'] = self.es.timeindex
 
     def plot(self):
         pass
@@ -176,8 +179,17 @@ class DistrictScenario(Scenario):
         if filename is None:
             filename = "ds_dump.oemof"
 
-        self.es.dump(dpath=path, filename=filename)
-        logging.info("Energy system of DistrictScenario saved as dump"
+        if not os.path.isdir(path):
+            os.makedirs(path)
+
+        if self.model is not None:
+            setattr(self, 'model', None)
+        if self.es is not None:
+            setattr(self, 'es', None)
+
+        pickle.dump(self, open(os.path.join(path, filename), "wb"))
+
+        logging.info("DistrictScenario dumped"
                      " to {} as {}".format(path, filename))
 
     def restore_des(self, path=None, filename=None):
@@ -196,6 +208,11 @@ class DistrictScenario(Scenario):
     #     logging.info(
     #         "Restoring EnergySystem will overwrite existing attributes."
     #     )
+
+
+def load_district_scenario(path, filename):
+    """Load a TableBuilder class."""
+    return pickle.load(open(os.path.join(path, filename), "rb"))
 
 
 class ParetoFront(DistrictScenario):
