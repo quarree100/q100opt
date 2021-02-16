@@ -15,7 +15,7 @@ import pandas as pd
 import pickle
 
 from q100opt.external import Scenario
-from q100opt.postprocessing import analyse_costs
+from q100opt.postprocessing import analyse_costs, analyse_emissions
 
 
 class DistrictScenario(Scenario):
@@ -183,12 +183,14 @@ class DistrictScenario(Scenario):
         if not os.path.isdir(path):
             os.makedirs(path)
 
-        if self.model is not None:
-            setattr(self, 'model', None)
-        if self.es is not None:
-            setattr(self, 'es', None)
+        dump_des = deepcopy(self)
 
-        pickle.dump(self, open(os.path.join(path, filename), "wb"))
+        if dump_des.model is not None:
+            setattr(dump_des, 'model', None)
+        if dump_des.es is not None:
+            setattr(dump_des, 'es', None)
+
+        pickle.dump(dump_des, open(os.path.join(path, filename), "wb"))
 
         logging.info("DistrictScenario dumped"
                      " to {} as {}".format(path, filename))
@@ -216,8 +218,8 @@ class DistrictScenario(Scenario):
             results=self.results
         )
 
+        # check if objective and recalculation match
         total_costs = self.results['cost_analysis']['all']['costs'].sum()
-
         objective_value = self.results['meta']['objective']
 
         if abs(total_costs - objective_value) > 0.01:
@@ -230,6 +232,30 @@ class DistrictScenario(Scenario):
             )
 
         logging.info("Economic analysis completed.")
+
+    def analyse_emissions(self):
+        """Performs a summary of emissions of the energy system."""
+        self.results['emission_analysis'] = analyse_emissions(
+            results=self.results
+        )
+
+        # check if constraint and recalculation match
+        total_em = self.results[
+            'emission_analysis']['summary']['emissions'].sum()
+        emission_value = self.results['Emissions']
+
+        if abs(total_em - emission_value) > 0.01:
+            raise ValueError(
+                "The constraint emission value and the re-calculated emissions"
+                " do not match!"
+            )
+        else:
+            logging.info(
+                "Check passed: Constraint emission value and recalculated"
+                " emission match."
+            )
+
+        logging.info("Emission analysis completed.")
 
 
 def load_district_scenario(path, filename):
