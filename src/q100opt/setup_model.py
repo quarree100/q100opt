@@ -29,6 +29,7 @@ class DistrictScenario(Scenario):
         self.location = kwargs.get("location", None)
         self.number_of_time_steps = \
             kwargs.get("number_of_time_steps", 10)
+        self.results = dict()
 
     def load_csv(self, path=None):
         if path is not None:
@@ -106,21 +107,23 @@ class DistrictScenario(Scenario):
         self.model.solve(
             solver=solver, solve_kwargs={"tee": tee, "logfile": logfile}
         )
-        self.es.results["main"] = solph.processing.results(self.model)
-        self.es.results["meta"] = solph.processing.meta_results(self.model)
-        self.es.results["param"] = solph.processing.parameter_as_dict(self.es)
-        self.es.results["meta"]["scenario"] = self.scenario_info(solver)
+
+        # store directly at district energy system
+        self.results["main"] = solph.processing.results(self.model)
+        self.results["meta"] = solph.processing.meta_results(self.model)
+        self.results["param"] = solph.processing.parameter_as_dict(self.es)
+        self.results["meta"]["scenario"] = self.scenario_info(solver)
         if self.location is not None:
-            self.es.results["meta"]["in_location"] = self.location
-        self.es.results['meta']["datetime"] = datetime.datetime.now()
-        self.es.results["meta"]["solph_version"] = solph.__version__
-        self.es.results['meta']['emission_limit'] = self.emission_limit
-        self.es.results['costs'] = self.model.objective()
-        self.es.results['table_collection'] = self.table_collection
+            self.results["meta"]["in_location"] = self.location
+        self.results['meta']["datetime"] = datetime.datetime.now()
+        self.results["meta"]["solph_version"] = solph.__version__
+        self.results['meta']['emission_limit'] = self.emission_limit
+        self.results['meta']['solver']['solver'] = solver
+        self.results['costs'] = self.model.objective()
+        self.results['table_collection'] = self.table_collection
         if hasattr(self.model, 'integral_limit_emission_factor'):
-            self.es.results['emissions'] = \
+            self.results['emissions'] = \
                 self.model.integral_limit_emission_factor()
-        self.results = self.es.results
         self.results['timeindex'] = self.es.timeindex
 
     def plot(self):
@@ -190,12 +193,15 @@ class DistrictScenario(Scenario):
         if dump_des.es is not None:
             setattr(dump_des, 'es', None)
 
-        pickle.dump(dump_des, open(os.path.join(path, filename), "wb"))
+        pickle.dump(dump_des.__dict__, open(os.path.join(path, filename), "wb"))
 
         logging.info("DistrictScenario dumped"
                      " to {} as {}".format(path, filename))
 
-    def restore_des(self, path=None, filename=None):
+    def restore(self, path=None, filename=None):
+        """Restores a district energy system from dump."""
+        print('test')
+
         pass
     #     """Restores DistrictScenario from dumped EnergySystem."""
     #     if path is None:
@@ -208,9 +214,9 @@ class DistrictScenario(Scenario):
     #
     #     es_restore = solph.EnergySystem()
     #     es_restore.restore(dpath=path, filename=filename)
-    #     logging.info(
-    #         "Restoring EnergySystem will overwrite existing attributes."
-    #     )
+        logging.info(
+            "Restoring EnergySystem will overwrite existing attributes."
+        )
 
     def analyse_costs(self):
         """Performs a cost analysis."""
@@ -242,7 +248,7 @@ class DistrictScenario(Scenario):
         # check if constraint and recalculation match
         total_em = self.results[
             'emission_analysis']['summary']['emissions'].sum()
-        emission_value = self.results['Emissions']
+        emission_value = self.results['emissions']
 
         if abs(total_em - emission_value) > 0.01:
             raise ValueError(
@@ -288,7 +294,12 @@ class DistrictScenario(Scenario):
 
 def load_district_scenario(path, filename):
     """Load a TableBuilder class."""
-    return pickle.load(open(os.path.join(path, filename), "rb"))
+    des_restore = DistrictScenario()
+
+    des_restore.__dict__ = \
+        pickle.load(open(os.path.join(path, filename), "rb"))
+
+    return des_restore
 
 
 class ParetoFront(DistrictScenario):

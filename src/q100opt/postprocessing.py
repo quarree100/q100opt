@@ -314,7 +314,7 @@ def get_attr_flows(results, key='variable_costs'):
     list : List of flows, where a non zero attribute value is given either
            at the 'scalars' or 'sequences'.
     """
-    param = results['Param']
+    param = results['param']
 
     list_keys = list(param.keys())
 
