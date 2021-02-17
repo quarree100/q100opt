@@ -200,23 +200,8 @@ class DistrictScenario(Scenario):
 
     def restore(self, path=None, filename=None):
         """Restores a district energy system from dump."""
-        print('test')
-
-        pass
-    #     """Restores DistrictScenario from dumped EnergySystem."""
-    #     if path is None:
-    #         path = os.path.join(
-    #             os.path.expanduser("~"), ".q100opt", "dumps", "energysystem"
-    #         )
-    #
-    #     if filename is None:
-    #         filename = "ds_dump.oemof"
-    #
-    #     es_restore = solph.EnergySystem()
-    #     es_restore.restore(dpath=path, filename=filename)
-        logging.info(
-            "Restoring EnergySystem will overwrite existing attributes."
-        )
+        self.__dict__ = load_district_scenario(path, filename).__dict__
+        logging.info("DistrictEnergySystem restored.")
 
     def analyse_costs(self):
         """Performs a cost analysis."""
