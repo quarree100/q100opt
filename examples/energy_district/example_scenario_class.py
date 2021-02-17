@@ -1,5 +1,5 @@
 from q100opt.setup_model import load_csv_data
-from q100opt.setup_model import DistrictScenario
+from q100opt.scenario_tools import DistrictScenario
 from q100opt import postprocessing as pp
 from oemof.network.graph import create_nx_graph
 import logging
@@ -19,7 +19,7 @@ ds.solve(solver='cbc')
 
 # POSTPROCESSING #######################
 
-results = ds.es.results['main']
+results = ds.results['main']
 
 # plots invests
 pp.plot_invest_flows(results)
