@@ -272,7 +272,7 @@ class DistrictScenario(Scenario):
             'absolute emission [kg/a]': emissions,
             'end_energy [kWh/a]': end_energy,
             'specific costs [€/kWh]': costs/end_energy,
-            'specific emission [€/kWh]': emissions/end_energy,
+            'specific emission [kg/kWh]': emissions/end_energy,
         }
 
         df_kpi = pd.DataFrame.from_dict(
@@ -280,6 +280,8 @@ class DistrictScenario(Scenario):
         )
 
         self.results['kpi'] = df_kpi
+
+        return df_kpi
 
 
 def load_district_scenario(path, filename):
@@ -402,7 +404,10 @@ class ParetoFront(DistrictScenario):
         self.results['pareto_front'] = self._get_pareto_results()
 
     def store_results(self, path=None):
-        """Store all results of pareto front."""
+        """
+        Store main results and input table of pareto front in a not python
+        readable way (.xlsx / .csv).
+        """
         if path is None:
             bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
             if not os.path.isdir(bpath):
@@ -457,6 +462,22 @@ class ParetoFront(DistrictScenario):
         """Restores a district energy system from dump."""
         self.__dict__ = load_pareto_front(path, filename).__dict__
         logging.info("DistrictEnergySystem restored.")
+
+    def analyse_kpi(self, label_end_energy=None):
+        """Performs some postprocessing methods for all DistrictEnergySystems.
+        """
+        if label_end_energy is None:
+            label_end_energy = ['demand_heat']
+
+        d_kpi = {}
+        for e_key, des in self.district_scenarios.items():
+            d_kpi.update(
+                {e_key: des.analyse_kpi(label_end_energy=label_end_energy)}
+            )
+
+        df_kpi = pd.concat(d_kpi, axis=1)
+
+        return df_kpi
 
 
 def load_pareto_front(path, filename):
