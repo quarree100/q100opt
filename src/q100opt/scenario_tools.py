@@ -283,7 +283,7 @@ class DistrictScenario(Scenario):
 
 
 def load_district_scenario(path, filename):
-    """Load a TableBuilder class."""
+    """Load a DistrictScenario class."""
     des_restore = DistrictScenario()
 
     des_restore.__dict__ = \
@@ -302,12 +302,7 @@ class ParetoFront(DistrictScenario):
         self.number = number_of_points
         self.dist_type = dist_type
         self.off_set = off_set
-
-        if self.table_collection is not {}:
-            self.table_collection_co2opt = \
-                co2_optimisation(self.table_collection)
-        else:
-            ValueError('Provide a table_collection!')
+        self.table_collection_co2opt = None
         self.ds_min_co2 = None
         self.ds_max_co2 = None
         self.e_min = None
@@ -366,6 +361,12 @@ class ParetoFront(DistrictScenario):
 
     def calc_pareto_front(self, dump_esys=False, **kwargs):
         """Calculates the Pareto front for all emission limits."""
+        if self.table_collection is not None:
+            self.table_collection_co2opt = \
+                co2_optimisation(self.table_collection)
+        else:
+            ValueError('Provide a table_collection!')
+
         self.ds_min_co2 = self._get_min_emission(**kwargs)
         self.ds_max_co2 = self._get_max_emssion(**kwargs)
         self.e_min = self.ds_min_co2.results['meta']['objective']
@@ -447,6 +448,42 @@ class ParetoFront(DistrictScenario):
     def restore_from_results(self, path):
         """Restores a Pareto front class from a result folder."""
         pass
+
+    def dump(self, path=None, filename=None):
+        """Dumps the pareto front instance."""
+
+        # delete all oemof.solph.EnergySystems and oemof.solph.Models
+        for k, v in self.__dict__.items():
+            if hasattr(v, 'es') or hasattr(v, 'model'):
+                setattr(v, 'es', None)
+                setattr(v, 'model', None)
+
+        for _, des in self.district_scenarios.items():
+            setattr(des, 'es', None)
+            setattr(des, 'model', None)
+
+        pickle.dump(
+            self.__dict__, open(os.path.join(path, filename), "wb")
+        )
+
+        logging.info(
+            "ParetoFront dumped to {} as {}".format(path, filename)
+        )
+
+    def restore(self, path=None, filename=None):
+        """Restores a district energy system from dump."""
+        self.__dict__ = load_pareto_front(path, filename).__dict__
+        logging.info("DistrictEnergySystem restored.")
+
+
+def load_pareto_front(path, filename):
+    """Load a ParetoFront class."""
+    pf_restore = ParetoFront()
+
+    pf_restore.__dict__ = \
+        pickle.load(open(os.path.join(path, filename), "rb"))
+
+    return pf_restore
 
 
 def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
