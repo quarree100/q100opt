@@ -280,7 +280,7 @@ class DistrictScenario(Scenario):
         }
 
         df_kpi = pd.DataFrame.from_dict(
-            kpi_dct, orient='index', columns=[self.name]
+            kpi_dct, orient='index',
         )
 
         self.results['kpi'] = df_kpi
