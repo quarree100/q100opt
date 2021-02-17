@@ -401,7 +401,7 @@ class ParetoFront(DistrictScenario):
 
         self.results['pareto_front'] = self._get_pareto_results()
 
-    def store_results(self, path=None, esys=False):
+    def store_results(self, path=None):
         """Store all results of pareto front."""
         if path is None:
             bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
@@ -413,19 +413,6 @@ class ParetoFront(DistrictScenario):
             path = os.path.join(dpath, "pareto")
             if not os.path.isdir(path):
                 os.mkdir(path)
-
-        # dump energy systems
-        esys_path = os.path.join(path, "energy_system")
-        if not os.path.isdir(esys_path):
-            os.mkdir(esys_path)
-
-        if esys:
-            for name, scenario in self.district_scenarios.items():
-                scenario.es.dump(
-                    dpath=esys_path,
-                    filename=name,
-                )
-            logging.info("EnerySystems dumped to {0}".format(esys_path))
 
         # store table_collection
         tables_path = os.path.join(path, "input_tables")
@@ -444,10 +431,6 @@ class ParetoFront(DistrictScenario):
         self.results['pareto_front'].to_excel(path_pareto)
         logging.info(
             "Pareto front table saved as xlsx to {0}".format(path_pareto))
-
-    def restore_from_results(self, path):
-        """Restores a Pareto front class from a result folder."""
-        pass
 
     def dump(self, path=None, filename=None):
         """Dumps the pareto front instance."""
