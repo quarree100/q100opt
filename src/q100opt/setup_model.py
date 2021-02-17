@@ -257,6 +257,34 @@ class DistrictScenario(Scenario):
 
         logging.info("Emission analysis completed.")
 
+    def analyse_kpi(self, label_end_energy=None):
+        """Description."""
+        if label_end_energy is None:
+            label_end_energy = ['demand_heat']
+
+        costs = self.results['meta']['objective']
+
+        emissions = self.results['emissions']
+
+        end_energy = sum([
+            solph.views.node(
+                self.results['main'], x)["sequences"].values.sum()
+            for x in label_end_energy])
+
+        kpi_dct = {
+            'absolute costs [€/a]': costs,
+            'absolute emission [kg/a]': emissions,
+            'end_energy [kWh/a]': end_energy,
+            'specific costs [€/kWh]': costs/end_energy,
+            'specific emission [€/kWh]': emissions/end_energy,
+        }
+
+        df_kpi = pd.DataFrame.from_dict(
+            kpi_dct, orient='index', columns=[self.name]
+        )
+
+        self.results['kpi'] = df_kpi
+
 
 def load_district_scenario(path, filename):
     """Load a TableBuilder class."""
