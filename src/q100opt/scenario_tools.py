@@ -302,28 +302,21 @@ class ParetoFront(DistrictScenario):
         self.number = number_of_points
         self.dist_type = dist_type
         self.off_set = off_set
-        self.solve_attr = {
-            'solver': kwargs.get("solver", 'gurobi'),
-            'tee': kwargs.get("tee", True)
-        }
+
         if self.table_collection is not {}:
-            self.table_collection_co2opt = co2_optimisation(
-                self.table_collection
-            )
+            self.table_collection_co2opt = \
+                co2_optimisation(self.table_collection)
         else:
             ValueError('Provide a table_collection!')
-        self.ds_min_co2 = self._get_min_emission()
-        self.ds_max_co2 = self._get_max_emssion()
-        self.e_min = self.ds_min_co2.results['meta']['objective']
-        self.e_max = self.ds_max_co2.results['emissions']
-        if emission_limits is not None:
-            self.emission_limits = emission_limits
-        else:
-            self.emission_limits = self._calc_emission_limits()
-        self.district_scenarios = {}
+        self.ds_min_co2 = None
+        self.ds_max_co2 = None
+        self.e_min = None
+        self.e_max = None
+        self.emission_limits = emission_limits
+        self.district_scenarios = dict()
         self.pareto_front = None
 
-    def _get_min_emission(self):
+    def _get_min_emission(self, **kwargs):
         """Calculates the pareto point with minimum emission."""
         sc_co2opt = DistrictScenario(
             emission_limit=1000000000,
@@ -331,17 +324,17 @@ class ParetoFront(DistrictScenario):
             number_of_time_steps=self.number_of_time_steps,
             year=self.year,
         )
-        sc_co2opt.solve(**self.solve_attr)
+        sc_co2opt.solve(**kwargs)
         return sc_co2opt
 
-    def _get_max_emssion(self):
+    def _get_max_emssion(self, **kwargs):
         sc_costopt = DistrictScenario(
             emission_limit=1000000000,
             table_collection=self.table_collection,
             number_of_time_steps=self.number_of_time_steps,
             year=self.year,
         )
-        sc_costopt.solve(**self.solve_attr)
+        sc_costopt.solve(**kwargs)
         return sc_costopt
 
     def _calc_emission_limits(self):
@@ -371,8 +364,16 @@ class ParetoFront(DistrictScenario):
                 self.district_scenarios[r].results['emissions']
         return df_pareto
 
-    def calc_pareto_front(self, dump_esys=False):
+    def calc_pareto_front(self, dump_esys=False, **kwargs):
         """Calculates the Pareto front for all emission limits."""
+        self.ds_min_co2 = self._get_min_emission(**kwargs)
+        self.ds_max_co2 = self._get_max_emssion(**kwargs)
+        self.e_min = self.ds_min_co2.results['meta']['objective']
+        self.e_max = self.ds_max_co2.results['emissions']
+
+        if self.emission_limits is None:
+            self.emission_limits = self._calc_emission_limits()
+
         for e in self.emission_limits:
             e_str = str(int(round(e)))
             ds_name = self.name + '_' + e_str
@@ -383,22 +384,21 @@ class ParetoFront(DistrictScenario):
                 number_of_time_steps=self.number_of_time_steps,
                 year=self.year,
             )
-            ds.solve(**self.solve_attr)
+            ds.solve(**kwargs)
 
             self.district_scenarios.update(
                 {e_str: ds}
             )
 
             if dump_esys:
-
                 esys_path = os.path.join(self.results_fn, self.name,
                                          "energy_system")
                 if not os.path.isdir(esys_path):
                     os.mkdir(esys_path)
 
-                ds.dump(path=esys_path, filename=e_str)
+                ds.dump(path=esys_path, filename=e_str + '_dump.des')
 
-        self.pareto_front = self._get_pareto_results()
+        self.results['pareto_front'] = self._get_pareto_results()
 
     def store_results(self, path=None, esys=False):
         """Store all results of pareto front."""
@@ -440,7 +440,7 @@ class ParetoFront(DistrictScenario):
 
         # store pareto results
         path_pareto = os.path.join(path, 'pareto_results.xlsx')
-        self.pareto_front.to_excel(path_pareto)
+        self.results['pareto_front'].to_excel(path_pareto)
         logging.info(
             "Pareto front table saved as xlsx to {0}".format(path_pareto))
 
