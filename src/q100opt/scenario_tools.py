@@ -104,10 +104,10 @@ class DistrictScenario(Scenario):
             filename = os.path.join(
                 solph.helpers.extend_basic_path("lp_files"), "q100opt.lp"
             )
-            logging.info("Store lp-file in {0}.".format(filename))
             self.model.write(
                 filename, io_options={"symbolic_solver_labels": True}
             )
+            logging.info("Store lp-file in {0}.".format(filename))
 
         self.model.solve(
             solver=solver, solve_kwargs={"tee": tee, "logfile": logfile}
