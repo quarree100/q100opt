@@ -313,7 +313,7 @@ class DistrictScenario(Scenario):
 
         return self.results['boundary_flows']
 
-    def analyse_heat_generation_flows(self, heat_bus_label='b_heat_gen'):
+    def analyse_heat_generation_flows(self, heat_bus_label='b_heat'):
         """Gets all heat generation flows."""
         if 'heat_generation' not in self.results.keys():
             self.results['heat_generation'] = \
@@ -323,7 +323,7 @@ class DistrictScenario(Scenario):
 
         return self.results['heat_generation']
 
-    def analyse_heat_bus(self, heat_bus_label='b_heat_gen'):
+    def analyse_heat_bus(self, heat_bus_label='b_heat'):
         """..."""
         if 'heat_bus' not in self.results.keys():
             self.results['heat_bus'] = \
@@ -333,7 +333,7 @@ class DistrictScenario(Scenario):
 
         return self.results['heat_bus']
 
-    def analyse_electricity_bus(self, elec_bus_label='b_elec_ez'):
+    def analyse_electricity_bus(self, elec_bus_label='b_elec'):
         """..."""
         if 'electricity_bus' not in self.results.keys():
             self.results['electricity_bus'] = \
