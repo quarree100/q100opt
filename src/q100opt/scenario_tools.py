@@ -208,11 +208,25 @@ class DistrictScenario(Scenario):
         self.__dict__ = load_district_scenario(path, filename).__dict__
         logging.info("DistrictEnergySystem restored.")
 
+    def analyse_results(self):
+        """Calls all analysis methods."""
+        self.analyse_costs()
+        self.analyse_emissions()
+        self.analyse_kpi()
+        # TODO :
+        #  - analyse boundary flows
+        #  - analyse heat generation bus
+        #  - analyse electricity bus
+        # self.analyse_flows
+
     def analyse_costs(self):
         """Performs a cost analysis."""
-        self.results['cost_analysis'] = analyse_costs(
-            results=self.results
-        )
+        if 'cost_analysis' not in self.results.keys():
+            self.results['cost_analysis'] = analyse_costs(
+                results=self.results
+            )
+
+            logging.info("Economic analysis completed.")
 
         # check if objective and recalculation match
         total_costs = self.results['cost_analysis']['all']['costs'].sum()
@@ -227,13 +241,16 @@ class DistrictScenario(Scenario):
                 "Check passed: Objective value and recalculated costs match."
             )
 
-        logging.info("Economic analysis completed.")
+        return self.results['cost_analysis']
 
     def analyse_emissions(self):
         """Performs a summary of emissions of the energy system."""
-        self.results['emission_analysis'] = analyse_emissions(
-            results=self.results
-        )
+        if 'emission_analysis' not in self.results.keys():
+            self.results['emission_analysis'] = analyse_emissions(
+                results=self.results
+            )
+
+            logging.info("Emission analysis completed.")
 
         # check if constraint and recalculation match
         total_em = self.results[
@@ -251,7 +268,7 @@ class DistrictScenario(Scenario):
                 " emission match."
             )
 
-        logging.info("Emission analysis completed.")
+        return self.results['emission_analysis']
 
     def analyse_kpi(self, label_end_energy=None):
         """Description."""
@@ -275,9 +292,7 @@ class DistrictScenario(Scenario):
             'specific emission [kg/kWh]': emissions/end_energy,
         }
 
-        df_kpi = pd.DataFrame.from_dict(
-            kpi_dct, orient='index',
-        )
+        df_kpi = pd.DataFrame.from_dict(kpi_dct, orient='index')
 
         self.results['kpi'] = df_kpi
 
