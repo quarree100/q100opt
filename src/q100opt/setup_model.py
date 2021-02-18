@@ -199,7 +199,8 @@ def get_flow_att(row, ts):
     -------
     dict : All Flow specific attribues.
     """
-
+    row = row.copy()
+    row.dropna(inplace=True)
     att = list(row.index)
     fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
 
