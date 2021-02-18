@@ -397,6 +397,52 @@ def get_attr_flow_results(des_results, key='variable_costs'):
     return df
 
 
+def get_boundary_flows(results):
+    """Gets the results of flows of the sinks and sources.
+
+    Parameters
+    ----------
+    results : dict
+        Results of the oemof.solph.Energysystem (results['main'])
+
+    Returns
+    -------
+    dict :  Dictionary with two keys:
+            - 'sequences': pandas.DataFrame
+              with the flow values at each timestep. The columns are a tuple:
+              ('sink', <label_of_sink>) for all solph.Sinks
+              ('source', <label_of_source>) for all solph.Sources
+            - 'summary': pandas.Series (sum of 'sequences')
+    """
+    label_sources = get_label_sources(results)
+    label_sinks = get_label_sinks(results)
+
+    # sources
+    data_sources = \
+        [solph.views.node(results, lab)['sequences'] for lab in label_sources]
+    column_sources = \
+        [('source', lab) for lab in label_sources]
+
+    df_sources = pd.concat(data_sources, axis=1, join='inner')
+    df_sources.columns = column_sources
+
+    # sinks
+    data_sinks = \
+        [solph.views.node(results, lab)['sequences'] for lab in label_sinks]
+    column_sinks = \
+        [('sink', lab) for lab in label_sinks]
+
+    df_sinks = pd.concat(data_sinks, axis=1, join='inner')
+    df_sinks.columns = column_sinks
+
+    df_seq = pd.concat([df_sources, df_sinks], axis=1)
+
+    df_sum = df_seq.sum()
+
+    return {'summary': df_sum,
+            'sequences': df_seq}
+
+
 def get_sum_flow(results, label):
     """Return the sum of a flow."""
     return solph.views.node(results, label)["sequences"].sum()[0]
