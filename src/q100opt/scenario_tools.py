@@ -210,9 +210,12 @@ class DistrictScenario(Scenario):
         self.__dict__ = load_district_scenario(path, filename).__dict__
         logging.info("DistrictEnergySystem restored.")
 
-    def analyse_results(self, heat_bus_label='b_heat_gen',
-                        elec_bus_label='b_el_ez'):
+    def analyse_results(self, heat_bus_label='b_heat',
+                        elec_bus_label='b_elec'):
         """Calls all analysis methods."""
+        for label in [heat_bus_label, elec_bus_label]:
+            check_label(self.results['main'], label)
+
         self.analyse_costs()
         self.analyse_emissions()
         self.analyse_kpi()
@@ -352,6 +355,11 @@ def load_district_scenario(path, filename):
         pickle.load(open(os.path.join(path, filename), "rb"))
 
     return des_restore
+
+
+def check_label(results, label):
+    """..."""
+    pass
 
 
 class ParetoFront(DistrictScenario):
