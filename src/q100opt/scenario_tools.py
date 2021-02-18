@@ -15,8 +15,9 @@ import pandas as pd
 import pickle
 
 from .external import Scenario
-from .postprocessing import analyse_costs, analyse_emissions, get_sum_flow,\
-    get_label_sinks, get_label_sources, get_boundary_flows
+from .postprocessing import analyse_costs, analyse_emissions, \
+    get_boundary_flows, get_trafo_flow, \
+    analyse_bus
 from .setup_model import load_csv_data, check_active,\
     check_nonconvex_invest_type, add_transformer, add_storages, add_sinks, \
     add_sources, add_sources_fix, add_buses, add_sinks_fix
@@ -209,16 +210,16 @@ class DistrictScenario(Scenario):
         self.__dict__ = load_district_scenario(path, filename).__dict__
         logging.info("DistrictEnergySystem restored.")
 
-    def analyse_results(self):
+    def analyse_results(self, heat_bus_label='b_heat_gen',
+                        elec_bus_label='b_el_ez'):
         """Calls all analysis methods."""
         self.analyse_costs()
         self.analyse_emissions()
         self.analyse_kpi()
         self.analyse_boundary_flows()
-        # TODO :
-        #  - analyse heat generation bus
-        #  - analyse electricity bus
-
+        self.analyse_heat_generation_flows(heat_bus_label=heat_bus_label)
+        self.analyse_heat_bus(heat_bus_label=heat_bus_label)
+        self.analyse_electricity_bus(elec_bus_label=elec_bus_label)
 
     def analyse_costs(self):
         """Performs a cost analysis."""
@@ -311,6 +312,36 @@ class DistrictScenario(Scenario):
             logging.info("Boundary flows analysis completed.")
 
         return self.results['boundary_flows']
+
+    def analyse_heat_generation_flows(self, heat_bus_label='b_heat_gen'):
+        """Gets all heat generation flows."""
+        if 'heat_generation' not in self.results.keys():
+            self.results['heat_generation'] = \
+                get_trafo_flow(self.results['main'], label_bus=heat_bus_label)
+
+            logging.info("Heat generation flow analysis completed.")
+
+        return self.results['heat_generation']
+
+    def analyse_heat_bus(self, heat_bus_label='b_heat_gen'):
+        """..."""
+        if 'heat_bus' not in self.results.keys():
+            self.results['heat_bus'] = \
+                analyse_bus(self.results['main'], bus_label=heat_bus_label)
+
+            logging.info("Heat bus analysed.")
+
+        return self.results['heat_bus']
+
+    def analyse_electricity_bus(self, elec_bus_label='b_elec_ez'):
+        """..."""
+        if 'electricity_bus' not in self.results.keys():
+            self.results['electricity_bus'] = \
+                analyse_bus(self.results['main'], bus_label=elec_bus_label)
+
+            logging.info("Electricity bus analysed.")
+
+        return self.results['electricity_bus']
 
 
 def load_district_scenario(path, filename):

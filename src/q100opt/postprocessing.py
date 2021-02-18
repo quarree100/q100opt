@@ -443,6 +443,54 @@ def get_boundary_flows(results):
             'sequences': df_seq}
 
 
+def get_trafo_flow(results, label_bus):
+    """Returns the flows from a solph.Transformer for a given solph.Bus.
+
+    Parameters
+    ----------
+    results : dict
+        Results of the oemof.solph.Energysystem (results['main'])
+    label_bus : str
+        Label of bus.
+
+    Returns
+    -------
+    dict :  Dictionary with two keys:
+            - 'sequences': pandas.DataFrame
+              with the flow values at each timestep. The columns are a tuple:
+              ('sink', <label_of_sink>) for all solph.Sinks
+              ('source', <label_of_source>) for all solph.Sources
+            - 'summary': pandas.Series (sum of 'sequences')
+    """
+    flows = [
+        x for x in results.keys()
+        if x[1] is not None
+        if isinstance(x[0], solph.Transformer)
+        if x[1].label == label_bus
+    ]
+
+    l_table = [results[x]['sequences'] for x in flows]
+    l_labels = [x[0].label for x in flows]
+
+    df_seq = pd.concat(l_table, axis=1, join='inner')
+    df_seq.columns = [('converter', lab) for lab in l_labels]
+
+    df_sum = df_seq.sum()
+
+    return {'summary': df_sum,
+            'sequences': df_seq}
+
+
+def analyse_bus(results, bus_label):
+    """..."""
+    df_seq = solph.views.node(results, bus_label)["sequences"]
+    df_seq.columns = [x[0] for x in df_seq.columns]
+    df_sum = df_seq.sum()
+
+    return {'sum': df_sum,
+            'sequences': df_seq}
+
+
 def get_sum_flow(results, label):
     """Return the sum of a flow."""
     return solph.views.node(results, label)["sequences"].sum()[0]
