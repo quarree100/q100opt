@@ -24,9 +24,7 @@ from .setup_model import load_csv_data, check_active,\
 
 
 class DistrictScenario(Scenario):
-
     """Scenario class for urban energy systems"""
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.input_path = kwargs.get("input_path", None)
