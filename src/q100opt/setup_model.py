@@ -389,28 +389,38 @@ def add_storages(tab, busd):
     for _, s in tab.iterrows():
 
         att = list(s.index)
-        fa_list = [
+
+        att_storage = [
             x.split('.')[1] for x in att if x.split('.')[0] == 'storage']
 
-        sto_attr = {}
+        att_inflow = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'inflow']
 
-        for fa in fa_list:
+        att_outflow = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'outflow']
+
+        sto_attr = {}
+        for fa in att_storage:
             sto_attr[fa] = s['storage.' + fa]
+
+        in_attr = {}
+        for fa in att_inflow:
+            in_attr[fa] = s['inflow.' + fa]
+
+        out_attr = {}
+        for fa in att_outflow:
+            out_attr[fa] = s['outflow.' + fa]
 
         io = get_invest_obj(s)
 
         if io is not None:
             sto_attr['nominal_storage_capacity'] = None
-            sto_attr['invest_relation_input_capacity'] = \
-                s['invest_relation_input_capacity']
-            sto_attr['invest_relation_output_capacity'] = \
-                s['invest_relation_output_capacity']
 
         storages.append(
             solph.components.GenericStorage(
                 label=s['label'],
-                inputs={busd[s['bus']]: solph.Flow()},
-                outputs={busd[s['bus']]: solph.Flow()},
+                inputs={busd[s['bus']]: solph.Flow(**in_attr)},
+                outputs={busd[s['bus']]: solph.Flow(**out_attr)},
                 investment=io,
                 **sto_attr,
             )
