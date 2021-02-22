@@ -257,7 +257,7 @@ class DistrictScenario(Scenario):
 
         # check if constraint and recalculation match
         total_em = self.results[
-            'emission_analysis']['summary']['emissions'].sum()
+            'emission_analysis']['sum']['emissions'].sum()
         emission_value = self.results['emissions']
 
         if abs(total_em - emission_value) > 0.01:
@@ -278,28 +278,32 @@ class DistrictScenario(Scenario):
         if label_end_energy is None:
             label_end_energy = ['demand_heat']
 
-        costs = self.results['meta']['objective']
+        if 'kpi' not in self.results.keys():
+            costs = self.results['meta']['objective']
 
-        emissions = self.results['emissions']
+            emissions = self.results['emissions']
 
-        end_energy = sum([
-            solph.views.node(
-                self.results['main'], x)["sequences"].values.sum()
-            for x in label_end_energy])
+            end_energy = sum([
+                solph.views.node(
+                    self.results['main'], x)["sequences"].values.sum()
+                for x in label_end_energy])
 
-        kpi_dct = {
-            'absolute costs [€/a]': costs,
-            'absolute emission [kg/a]': emissions,
-            'end_energy [kWh/a]': end_energy,
-            'specific costs [€/kWh]': costs/end_energy,
-            'specific emission [kg/kWh]': emissions/end_energy,
-        }
+            kpi_dct = {
+                'absolute costs [€/a]': costs,
+                'absolute emission [kg/a]': emissions,
+                'end_energy [kWh/a]': end_energy,
+                'specific costs [€/kWh]': costs/end_energy,
+                'specific emission [kg/kWh]': emissions/end_energy,
+            }
 
-        df_kpi = pd.DataFrame.from_dict(kpi_dct, orient='index')
+            kpi = pd.Series(kpi_dct)
 
-        self.results['kpi'] = df_kpi
+            self.results['kpi'] = kpi
 
-        return df_kpi
+        else:
+            kpi = self.results['kpi']
+
+        return kpi
 
     def analyse_boundary_flows(self):
         """Returns the sequences and sums of all sinks and sources.
@@ -528,6 +532,20 @@ class ParetoFront(DistrictScenario):
         """Restores a district energy system from dump."""
         self.__dict__ = load_pareto_front(path, filename).__dict__
         logging.info("DistrictEnergySystem restored.")
+
+    def analyse_results(self, heat_bus_label='b_heat',
+                        elec_bus_label='b_elec'):
+        """
+        Performs the analyse_results method of the DistrictScenario class
+        for all scenarios of the pareto front.
+        """
+        for e_key, des in self.district_scenarios.items():
+            des.analyse_results(heat_bus_label=heat_bus_label,
+                                elec_bus_label=elec_bus_label)
+
+        self.results['kpi'] = self.analyse_kpi()
+
+        print('wait here')
 
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
