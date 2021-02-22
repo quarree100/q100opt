@@ -545,8 +545,6 @@ class ParetoFront(DistrictScenario):
 
         self.results['kpi'] = self.analyse_kpi()
 
-        print('wait here')
-
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
         """
