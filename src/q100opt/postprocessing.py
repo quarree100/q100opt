@@ -45,7 +45,7 @@ def analyse_costs(results):
     }
 
     capex = pd.concat({'capex': costs['capex']}, names=['cost_type'])
-    opex = pd.concat({'opex': costs['opex']['summary']}, names=['cost_type'])
+    opex = pd.concat({'opex': costs['opex']['sum']}, names=['cost_type'])
     all = pd.concat([capex, opex])
 
     costs.update({'all': all})
@@ -292,7 +292,7 @@ def analyse_flow_attribute(des_results, keyword='variable_costs'):
 
     df_summary = df_summary.join(df_mean)
 
-    return {'summary': df_summary,
+    return {'sum': df_summary,
             'sequences': df}
 
 
@@ -438,7 +438,7 @@ def get_boundary_flows(results):
 
     df_sum = df_seq.sum()
 
-    return {'summary': df_sum,
+    return {'sum': df_sum,
             'sequences': df_seq}
 
 
@@ -476,7 +476,7 @@ def get_trafo_flow(results, label_bus):
 
     df_sum = df_seq.sum()
 
-    return {'summary': df_sum,
+    return {'sum': df_sum,
             'sequences': df_seq}
 
 
