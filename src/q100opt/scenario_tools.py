@@ -57,6 +57,9 @@ class DistrictScenario(Scenario):
 
     def create_nodes(self):
         nd = self.table_collection
+
+        # TODO : Add check, if a table (eg Link, or Storages is not given)
+
         nod, busd = add_buses(nd['Bus'])
         nod.extend(
             add_sources(nd['Source'], busd, nd['Timeseries']) +
