@@ -498,3 +498,25 @@ def add_transformer(tab, busd, timeseries=None):
         )
 
     return transformer
+
+
+def add_links(tab, busd):
+    """..."""
+    links = []
+
+    for _, t in tab.iterrows():
+        links.append(
+            solph.custom.Link(
+                label=t['label'],
+                inputs={busd[t['b0']]: solph.Flow(),
+                        busd[t['b1']]: solph.Flow()},
+                outputs={busd[t['b0']]: solph.Flow(),
+                         busd[t['b1']]: solph.Flow()},
+                conversion_factors={
+                    (busd[t['b0']], busd[t['b1']]): t['cv_0>1'],
+                    (busd[t['b1']], busd[t['b0']]): t['cv_1>0'],
+                }
+            )
+        )
+
+    return links
