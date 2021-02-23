@@ -20,7 +20,7 @@ from .postprocessing import analyse_costs, analyse_emissions, \
     analyse_bus
 from .setup_model import load_csv_data, check_active,\
     check_nonconvex_invest_type, add_transformer, add_storages, add_sinks, \
-    add_sources, add_sources_fix, add_buses, add_sinks_fix
+    add_sources, add_sources_fix, add_buses, add_sinks_fix, add_links
 
 
 class DistrictScenario(Scenario):
@@ -64,7 +64,8 @@ class DistrictScenario(Scenario):
             add_sinks(nd['Sink'], busd, nd['Timeseries']) +
             add_sinks_fix(nd['Sink_fix'], busd, nd['Timeseries']) +
             add_storages(nd['Storages'], busd) +
-            add_transformer(nd['Transformer'], busd, nd['Timeseries'])
+            add_transformer(nd['Transformer'], busd, nd['Timeseries']) +
+            add_links(nd['Link'], busd)
         )
         return nod
 
@@ -544,6 +545,9 @@ class ParetoFront(DistrictScenario):
                                 elec_bus_label=elec_bus_label)
 
         self.results['kpi'] = self.analyse_kpi()
+        self.results['heat_generation'] = self.analyse_heat_generation_flows(
+            heat_bus_label=heat_bus_label
+        )
 
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
@@ -560,6 +564,31 @@ class ParetoFront(DistrictScenario):
         df_kpi = pd.concat(d_kpi, axis=1)
 
         return df_kpi
+
+    def analyse_heat_generation_flows(self, heat_bus_label='b_heat'):
+        """..."""
+        # def _get_keys():
+        #     l_keys = []
+        #     for res_key, res in v.results.items():
+        #         if isinstance(res, dict):
+        #             if 'sum' in res.keys():
+        #                 l_keys.append(res_key)
+        #     return l_keys
+        #
+        # d_flow_results = {}
+        # for k, v in self.district_scenarios.items():
+        #     keys = _get_keys()
+        #     for re_k in keys:
+        #         d_flow_results.update(
+        #             {re_k: {k: v.results[re_k]['sum']}}
+        #         )
+        d_hg = {}
+        for k, v in self.district_scenarios.items():
+            d_hg.update({
+                k: v.results['heat_generation']['sum']
+            })
+        df_heat_gen = pd.concat(d_hg, axis=1)
+        return df_heat_gen
 
 
 def load_pareto_front(path, filename):
