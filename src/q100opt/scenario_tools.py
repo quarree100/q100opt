@@ -58,8 +58,6 @@ class DistrictScenario(Scenario):
     def create_nodes(self):
         nd = self.table_collection
 
-        # TODO : Add check, if a table (eg Link, or Storages is not given)
-
         nod, busd = add_buses(nd['Bus'])
         nod.extend(
             add_sources(nd['Source'], busd, nd['Timeseries']) +
@@ -67,9 +65,12 @@ class DistrictScenario(Scenario):
             add_sinks(nd['Sink'], busd, nd['Timeseries']) +
             add_sinks_fix(nd['Sink_fix'], busd, nd['Timeseries']) +
             add_storages(nd['Storages'], busd) +
-            add_transformer(nd['Transformer'], busd, nd['Timeseries']) +
-            add_links(nd['Link'], busd)
+            add_transformer(nd['Transformer'], busd, nd['Timeseries'])
         )
+
+        if 'Link' in nd.keys():
+            nod.extend(add_links(nd['Link'], busd))
+
         return nod
 
     def table2es(self):
@@ -386,6 +387,12 @@ class ParetoFront(DistrictScenario):
         self.emission_limits = emission_limits
         self.district_scenarios = dict()
         self.pareto_front = None
+
+        # ToDo: sort results District Scenarios
+        # self.ordered_scenarios = [
+        #     str(x) for x in sorted([int(x) for x in self.des.keys()],
+        #                            reverse=True)
+        # ]
 
     def _get_min_emission(self, **kwargs):
         """Calculates the pareto point with minimum emission."""
