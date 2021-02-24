@@ -9,6 +9,7 @@ import datetime
 import logging
 import os
 from copy import deepcopy
+import warnings
 
 import oemof.solph as solph
 import pandas as pd
@@ -694,30 +695,36 @@ def co2_optimisation(d_data_origin):
     d_data = deepcopy(d_data_origin)
 
     # 1. variable_costs <--> emission_factor
-    for _, tab in d_data.items():
-        if ('flow.variable_costs' or 'flow.emission_factor') in tab.columns:
-            var_costs = tab['flow.variable_costs'].copy()
-            co2 = tab['flow.emission_factor'].copy()
+    for key, tab in d_data.items():
 
-            tab['flow.variable_costs'] = co2
-            tab['flow.emission_factor'] = var_costs
+        var_cost_col = [
+            x for x in tab.columns
+            if 'variable_costs' in x
+        ]
+
+        var_emission_col = [
+            x for x in tab.columns
+            if 'emission_factor' in x
+        ]
+
+        prefix = set([x.split('.')[0] for x in var_cost_col] + \
+                     [x.split('.')[0] for x in var_emission_col])
+
+        for pre in prefix:
+            tab.rename(
+                columns={pre + '.emission_factor': pre + '.variable_costs',
+                         pre + '.variable_costs': pre + '.emission_factor',
+                         }, inplace=True)
 
         # check if there is excess, shortage is active
         for key in ['excess', 'shortage']:
             if key in tab.columns:
                 if tab[key].sum() > 0:
-                    ValueError('There is active excess/shortage. Please check'
-                               'if there are no costs involved.')
-
-    # 1b : Timeseries table
-    for col_name in list(d_data['Timeseries'].columns):
-        if 'variable_costs' in col_name:
-            prefix = col_name.split('.')[0]
-            cost_series = d_data['Timeseries'][col_name].copy()
-            co2_series = \
-                d_data['Timeseries'][prefix + '.emission_factor'].copy()
-            d_data['Timeseries'][col_name] = co2_series
-            d_data['Timeseries'][prefix + '.emission_factor'] = cost_series
+                    warnings.warn(
+                        'Convert to CO2opt tables:'
+                        ' There is active excess/shortage. Please check'
+                        ' if there are no costs involved.'
+                    )
 
     # 2. investment costs to zero
     for _, tab in d_data.items():
