@@ -460,7 +460,10 @@ class ParetoFront(DistrictScenario):
             self.emission_limits = self._calc_emission_limits()
 
         for e in self.emission_limits:
-            e_str = str(int(round(e)))
+            # Scenario name relative to emission range
+            e_rel = (e - self.e_min) / (self.e_max - self.e_min)
+            e_str = "{:.2f}".format(e_rel)
+            # e_str = str(int(round(e)))
             ds_name = self.name + '_' + e_str
             ds = DistrictScenario(
                 name=ds_name,
