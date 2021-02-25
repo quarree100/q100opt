@@ -317,12 +317,13 @@ def stacked_bar_plot(df, show=True, ylabel=None):
         plt.show()
 
 
-def grouped_bar_plot(df, show=True, ylabel=None, xlabel="Label"):
+def grouped_bar_plot(df, show=True, ylabel=None, xlabel="Label", title=None):
     """Creates a figure with a grouped bar plot of a given DataFrame."""
     df.plot(kind='bar')
     plt.xlabel(xlabel=xlabel)
     plt.ylabel(ylabel=ylabel)
     plt.legend()
     plt.tight_layout()
+    plt.title(title)
     if show:
         plt.show()
