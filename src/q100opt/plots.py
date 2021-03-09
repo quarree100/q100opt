@@ -291,7 +291,7 @@ def plot_bus_stack(results, label_bus='b_heat', label_demand='t_pump_heatgrid',
     fig.tight_layout()
 
 
-def stacked_bar_plot(df, show=True, ylabel=None):
+def stacked_bar_plot(df, show=True, ylabel=None, title=None):
     """Creates a stacked bar plot."""
     plt.figure()
 
@@ -312,6 +312,7 @@ def stacked_bar_plot(df, show=True, ylabel=None):
     plt.ylabel(ylabel=ylabel)
     plt.legend()
     plt.tight_layout()
+    plt.title(title)
 
     if show:
         plt.show()
