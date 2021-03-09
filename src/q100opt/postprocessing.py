@@ -1,4 +1,5 @@
 import oemof.solph as solph
+from oemof.solph import views
 
 import logging
 import pandas as pd
@@ -394,6 +395,58 @@ def get_attr_flow_results(des_results, key='variable_costs'):
         )
 
     return df
+
+
+def get_all_sequences(results):
+    """..."""
+
+    d_node_types = {
+        'sink': solph.Sink,
+        'source': solph.Source,
+        'transformer': solph.Transformer,
+        'storage_flow': solph.GenericStorage,
+    }
+
+    l_df = []
+
+    for typ, solph_class in d_node_types.items():
+
+        group = {
+            k: v["sequences"]
+            for k, v in results.items()
+            if k[1] is not None
+            if isinstance(k[0], solph_class) or isinstance(k[1], solph_class)
+        }
+
+        df = views.convert_to_multiindex(group)
+        df_mi = df.columns.to_frame()
+        df_mi.reset_index(drop=True, inplace=True)
+        df_mi['from'] = [x.label for x in df_mi['from']]
+        df_mi['to'] = [x.label for x in df_mi['to']]
+        df_mi['type'] = typ
+        df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
+
+        l_df.append(df)
+
+    df_results = pd.concat(l_df, axis=1)
+
+    # add storage content with extra type=storage_content
+    group = {
+        k: v["sequences"]
+        for k, v in results.items()
+        if k[1] is None
+        if isinstance(k[0], solph.GenericStorage) or isinstance(
+            k[1], solph.GenericStorage)
+    }
+    df = views.convert_to_multiindex(group)
+    df_mi = df.columns.to_frame()
+    df_mi.reset_index(drop=True, inplace=True)
+    df_mi['from'] = [x.label for x in df_mi['from']]
+    df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
+
+    df_results = pd.concat([df_results, df], axis=1)
+
+    return df_results
 
 
 def get_boundary_flows(results):
