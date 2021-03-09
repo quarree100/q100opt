@@ -590,6 +590,7 @@ class ParetoFront(DistrictScenario):
         )
         self.results['sequences'] = self.analyse_sequences()
         self.results['sum'] = self.results['sequences'].sum().unstack(level=0)
+        self.results['costs'] = self.get_all_costs()
 
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
@@ -606,6 +607,21 @@ class ParetoFront(DistrictScenario):
         df_kpi = pd.concat(d_kpi, axis=1)
 
         return df_kpi
+
+    def get_all_costs(self):
+        """
+        Puts all cost analysis of the individual DistrictScenarios into
+        one Multi-index DataFrame.
+        """
+        d_costs = {}
+        for e_key, des in self.district_scenarios.items():
+            d_costs.update(
+                {e_key: des.results["cost_analysis"]["all"]}
+            )
+
+        df_costs = pd.concat(d_costs, names=['scenario'])
+
+        return df_costs
 
     def analyse_heat_generation_flows(self, heat_bus_label='b_heat'):
         """..."""
