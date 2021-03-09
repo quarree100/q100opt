@@ -470,8 +470,18 @@ def add_transformer(tab, busd, timeseries=None):
 
         d_in = {busd[row['in_1']]: solph.Flow(**in_attr1)}
 
+        if 'nonconvex_flow' in row.index:
+            if row['nonconvex_flow'] == 1:
+                nc = solph.NonConvex()
+            else:
+                nc = None
+        else:
+            nc = None
+
         d_out = {busd[row['out_1']]: solph.Flow(
-            investment=io, **flow_out1_attr
+            investment=io,
+            nonconvex=nc,
+            **flow_out1_attr
         )}
 
         # check if timeseries in conversion factors and convert to float
