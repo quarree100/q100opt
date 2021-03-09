@@ -328,3 +328,53 @@ def grouped_bar_plot(df, show=True, ylabel=None, xlabel="Label", title=None):
     plt.title(title)
     if show:
         plt.show()
+
+
+def plot_invest_values(pf, title=None, show=True):
+    """
+    Creates plot for the investment decisions (converter and storges)
+    of the pareto front class.
+
+    Parameters
+    ----------
+    pf : q100opt.scenario_tools.ParetoFront
+        Pareto front class with processed results.
+    title : str
+        Title of figure.
+    show : bool
+        Show the plot.
+    """
+    # get the data
+    idx = pd.IndexSlice
+
+    df_invest_conv = pf.results['costs'].loc[
+        idx[:, "capex", "converter", :], ["invest_value"]
+    ].unstack(level=0)
+    df_invest_conv.index = df_invest_conv.index.get_level_values(2)
+    df_invest_conv.columns = df_invest_conv.columns.get_level_values(1)
+
+    df_invest_store = pf.results['costs'].loc[
+        idx[:, "capex", "storage", :], ["invest_value"]
+    ].unstack(level=0)
+    df_invest_store.index = df_invest_store.index.get_level_values(2)
+    df_invest_store.columns = df_invest_store.columns.get_level_values(1)
+
+    # create the figure
+    fig, ax = plt.subplots(1, 2, figsize=[6.4*1.5, 4.8])
+
+    df_invest_conv.plot(ax=ax[0], kind='bar')
+    ax[0].set_ylabel('Installed capacity [kW]')
+    ax[0].set_xlabel('Energy converter units')
+    ax[0].legend()
+
+    df_invest_store.plot(ax=ax[1], kind='bar')
+    ax[1].set_ylabel('Installed capacity [kWh]')
+    ax[1].set_xlabel('Energy storages')
+    ax[1].legend()
+
+    plt.legend()
+    plt.title(title)
+    fig.tight_layout()
+
+    if show:
+        plt.show()
