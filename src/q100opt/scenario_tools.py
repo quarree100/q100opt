@@ -15,10 +15,11 @@ import oemof.solph as solph
 import pandas as pd
 import pickle
 
+from functools import reduce
 from .external import Scenario
 from .postprocessing import analyse_costs, analyse_emissions, \
     get_boundary_flows, get_trafo_flow, \
-    analyse_bus
+    analyse_bus, get_all_sequences
 from .setup_model import load_csv_data, check_active,\
     check_nonconvex_invest_type, add_transformer, add_storages, add_sinks, \
     add_sources, add_sources_fix, add_buses, add_sinks_fix, add_links
@@ -223,6 +224,7 @@ class DistrictScenario(Scenario):
         self.analyse_costs()
         self.analyse_emissions()
         self.analyse_kpi()
+        self.analyse_sequences()
         self.analyse_boundary_flows()
         self.analyse_heat_generation_flows(heat_bus_label=heat_bus_label)
         self.analyse_heat_bus(heat_bus_label=heat_bus_label)
@@ -310,6 +312,30 @@ class DistrictScenario(Scenario):
             kpi = self.results['kpi']
 
         return kpi
+
+    def analyse_sequences(self):
+        """..."""
+        if 'sequences' not in self.results.keys():
+            self.results['sequences'] = \
+                get_all_sequences(self.results['main'])
+
+            df_param = self.results['table_collection']['Timeseries'].copy()
+
+            list_of_tuples = [
+                ('parameter', x.split('.')[0], x.split('.')[1])
+                for x in df_param.columns
+            ]
+
+            df_param.columns = pd.MultiIndex.from_tuples(list_of_tuples)
+            df_param.index = self.results['timeindex']
+
+            self.results['sequences'] = pd.concat(
+                [self.results['sequences'], df_param], axis=1
+            )
+
+            logging.info("All sequences processed into one DataFrame.")
+
+        return self.results['sequences']
 
     def analyse_boundary_flows(self):
         """Returns the sequences and sums of all sinks and sources.
@@ -562,6 +588,8 @@ class ParetoFront(DistrictScenario):
         self.results['heat_generation'] = self.analyse_heat_generation_flows(
             heat_bus_label=heat_bus_label
         )
+        self.results['sequences'] = self.analyse_sequences()
+        self.results['sum'] = self.results['sequences'].sum().unstack(level=0)
 
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
@@ -603,6 +631,18 @@ class ParetoFront(DistrictScenario):
             })
         df_heat_gen = pd.concat(d_hg, axis=1)
         return df_heat_gen
+
+    def analyse_sequences(self):
+        """..."""
+        d_seq = {}
+        for e_key, des in self.district_scenarios.items():
+            d_seq.update(
+                {e_key: des.results["sequences"]}
+            )
+
+        df_seq = pd.concat(d_seq.values(), axis=1, keys=d_seq.keys())
+
+        return df_seq
 
 
 def load_pareto_front(path, filename):
