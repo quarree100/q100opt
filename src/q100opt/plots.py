@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
@@ -33,6 +34,37 @@ def plot_invest_storages(results):
     plt.ylabel('Installed Storage Capacity [kWh]')
     plt.xlabel('Label of storage')
     plt.show()
+
+
+def plot_investments(results, show=True, title=None):
+    """..."""
+    store_invest = get_invest_storages(results)
+
+    invest_val_s = [results[x]['scalars']['invest'] for x in store_invest]
+    invest_lab_s = [x[0].label for x in store_invest]
+
+    flows_invest = get_invest_converter(results)
+
+    invest_val = [results[x]['scalars']['invest'] for x in flows_invest]
+    invest_lab = [x[0].label for x in flows_invest]
+
+    # create the figure
+    fig, ax = plt.subplots(1, 2, figsize=[6.4 * 1.5, 4.8])
+
+    ax[0].bar(x=invest_lab, height=invest_val)
+    ax[0].set_ylabel('Installed capacity [kW]')
+    ax[0].set_xlabel('Energy converter units')
+
+    ax[1].bar(x=invest_lab_s, height=invest_val_s)
+    ax[1].set_ylabel('Installed capacity [kWh]')
+    ax[1].set_xlabel('Energy storages')
+
+    fig.suptitle(title)
+
+    fig.tight_layout()
+
+    if show:
+        plt.show()
 
 
 def plot_buses(res=None, es=None):
@@ -289,6 +321,7 @@ def plot_bus_stack(results, label_bus='b_heat', label_demand='t_pump_heatgrid',
     plt.legend()
     plt.title(title)
     fig.tight_layout()
+    plt.show()
 
 
 def stacked_bar_plot(df, show=True, ylabel=None, title=None):
@@ -330,7 +363,7 @@ def grouped_bar_plot(df, show=True, ylabel=None, xlabel="Label", title=None):
         plt.show()
 
 
-def plot_invest_values(pf, title=None, show=True):
+def plot_invest_values(pf, title=None, show=True, path=None):
     """
     Creates plot for the investment decisions (converter and storges)
     of the pareto front class.
@@ -348,16 +381,14 @@ def plot_invest_values(pf, title=None, show=True):
     idx = pd.IndexSlice
 
     df_invest_conv = pf.results['costs'].loc[
-        idx[:, "capex", "converter", :], ["invest_value"]
-    ].unstack(level=0)
-    df_invest_conv.index = df_invest_conv.index.get_level_values(2)
-    df_invest_conv.columns = df_invest_conv.columns.get_level_values(1)
+        :, idx["capex", "converter", :, "invest_value"]
+    ]
+    df_invest_conv.columns = df_invest_conv.columns.get_level_values(2)
 
     df_invest_store = pf.results['costs'].loc[
-        idx[:, "capex", "storage", :], ["invest_value"]
-    ].unstack(level=0)
-    df_invest_store.index = df_invest_store.index.get_level_values(2)
-    df_invest_store.columns = df_invest_store.columns.get_level_values(1)
+        :, idx["capex", "storage", :, "invest_value"]
+    ]
+    df_invest_store.columns = df_invest_store.columns.get_level_values(2)
 
     # create the figure
     fig, ax = plt.subplots(1, 2, figsize=[6.4*1.5, 4.8])
@@ -373,8 +404,12 @@ def plot_invest_values(pf, title=None, show=True):
     ax[1].legend()
 
     plt.legend()
-    plt.title(title)
+    # fig.title(title)
+    fig.suptitle(title)
     fig.tight_layout()
 
     if show:
         plt.show()
+
+    if path:
+        fig.savefig(os.path.join(path, "investments_" + title + ".png"))
