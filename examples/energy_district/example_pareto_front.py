@@ -7,12 +7,11 @@ table_collection = load_csv_data('data')
 pf = ParetoFront(
     table_collection=table_collection,
     number_of_points=5,
-    solver='cbc',
 )
 
-pf.calc_pareto_front()
+pf.calc_pareto_front(solver='cbc', tee=True)
 
-pf.pareto_front.plot(x='emissions', y='costs', kind='scatter')
+pf.results["pareto_front"].plot(x='emissions', y='costs', kind='scatter')
 plt.xlabel('emissions')
 plt.ylabel('costs')
 plt.show()
