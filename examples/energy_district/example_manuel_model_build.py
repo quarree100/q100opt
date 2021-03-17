@@ -10,7 +10,7 @@ from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_transformer
 from q100opt.setup_model import check_active
 from q100opt.setup_model import load_csv_data
-import q100opt.postprocessing as pp
+import q100opt.plots as plots
 
 # load data
 nd = load_csv_data('data')
@@ -49,5 +49,5 @@ om.solve(solver='gurobi', solve_kwargs={'tee': True})
 es.results['main'] = solph.processing.results(om)
 results = es.results['main']
 
-pp.plot_invest_flows(results)
-pp.plot_invest_storages(results)
+plots.plot_invest_flows(results)
+plots.plot_invest_storages(results)
