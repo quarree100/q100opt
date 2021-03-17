@@ -591,6 +591,8 @@ class ParetoFront(DistrictScenario):
         self.results['sequences'] = self.analyse_sequences()
         self.results['sum'] = self.results['sequences'].sum().unstack(level=0)
         self.results['costs'] = self.get_all_costs()
+        self.results['emissions'] = self.get_all_emissions()
+        self.results['scalars'] = self.get_all_scalars()
 
     def analyse_kpi(self, label_end_energy=None):
         """Performs some postprocessing methods for all DistrictEnergySystems.
@@ -616,12 +618,54 @@ class ParetoFront(DistrictScenario):
         d_costs = {}
         for e_key, des in self.district_scenarios.items():
             d_costs.update(
-                {e_key: des.results["cost_analysis"]["all"]}
+                {e_key: des.results["cost_analysis"]["all"].stack()}
             )
 
-        df_costs = pd.concat(d_costs, names=['scenario'])
+        df_costs = pd.concat(d_costs, names=['emission_limit'])
 
-        return df_costs
+        return df_costs.unstack(level=0).T
+
+    def get_all_emissions(self):
+        """
+        Puts all emissions analyses of the individual DistrictScenarios into
+        one Multi-index DataFrame.
+        """
+        d_emissions = {}
+        for e_key, des in self.district_scenarios.items():
+            d_emissions.update(
+                {e_key: pd.concat(
+                    {'emission': des.results["emission_analysis"]["sum"]}
+                ).stack()}
+            )
+
+        df_emissions = pd.concat(d_emissions, names=['emission_limit'])
+
+        df_emissions = df_emissions.unstack(level=0).T
+
+        return df_emissions
+
+    def get_all_scalars(self):
+        """Puts all scalar results of each scenario in one DataFrame."""
+        df_kpi = self.results['kpi'].T
+
+        df_mi = pd.DataFrame(df_kpi.columns, columns=['value'])
+        df_mi['category'] = None
+        df_mi['label'] = None
+        df_mi['type'] = 'kpi'
+
+        mi = pd.MultiIndex.from_frame(
+            df_mi[['type', 'category', 'label', 'value']]
+        )
+
+        df_kpi.columns = mi
+
+        df_scalars = pd.concat([
+            df_kpi,
+            self.results['costs'],
+            self.results['emissions']
+        ], axis=1)
+
+        return df_scalars
 
     def analyse_heat_generation_flows(self, heat_bus_label='b_heat'):
         """..."""
