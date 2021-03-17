@@ -1,6 +1,7 @@
 from q100opt.setup_model import load_csv_data
 from q100opt.scenario_tools import DistrictScenario
 from q100opt import postprocessing as pp
+from q100opt import plots as plots
 from oemof.network.graph import create_nx_graph
 import logging
 import networkx as nx
@@ -22,12 +23,12 @@ ds.solve(solver='cbc')
 results = ds.results['main']
 
 # plots invests
-pp.plot_invest_flows(results)
-pp.plot_invest_storages(results)
+plots.plot_invest_flows(results)
+plots.plot_invest_storages(results)
 
 # # plots time series
-# pp.plot_storages_soc(results)
-# pp.plot_buses(res=results, es=ds.es)
+plots.plot_storages_soc(results)
+plots.plot_buses(res=results, es=ds.es)
 
 # # export table collection
 # ds.tables_to_csv()
@@ -39,12 +40,12 @@ pp.plot_invest_storages(results)
 # plot esys graph I (Luis)
 grph = create_nx_graph(ds.es)
 pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
-pp.plot_graph(pos, grph)
+plots.plot_graph(pos, grph)
 logging.info('Energy system Graph OK.')
 
 # plot esys graph II (oemof examples)
 graph = create_nx_graph(ds.es)
-pp.draw_graph(
+plots.draw_graph(
     grph=graph,
     plot=True,
     layout="neato",
