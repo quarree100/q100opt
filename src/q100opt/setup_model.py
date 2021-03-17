@@ -2,6 +2,10 @@
 
 """Function for reading data and setting up an oemof-solph EnergySystem.
 
+Please use this module with care. It is work in progress!
+
+Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
+
 SPDX-License-Identifier: MIT
 
 """

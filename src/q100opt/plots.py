@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+
+"""
+This module holds a diverse mixture of plotting functions.
+
+Work in progress!
+
+Johannes Röder <johannes.roeder@uni-bremen.de>
+
+SPDX-License-Identifier: MIT
+
+"""
 import os
 import pandas as pd
 import numpy as np

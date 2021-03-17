@@ -4,7 +4,9 @@
 This module holds Classes and Functions for solving linear optimisation
 problems based on tabular data.
 
-Johannes Röder <johannes.roeder@uni-bremen.de>
+Please use this module with care. It is work in progress!
+
+Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 

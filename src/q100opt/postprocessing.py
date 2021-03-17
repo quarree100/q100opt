@@ -1,3 +1,18 @@
+# -*- coding: utf-8 -*-
+
+"""
+This module holds functions processing the results
+of an oemof.solph optimisation model, that are used by methods of the classes
+`q100opt.scenario_tools.DistrictScenario` and
+`q100opt.scenario_tools.ParetoFront`.
+
+Please use this module with care. It is work in progress!
+
+Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
+
+SPDX-License-Identifier: MIT
+
+"""
 import oemof.solph as solph
 from oemof.solph import views
 
