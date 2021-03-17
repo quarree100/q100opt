@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
-"""Function for reading data and setting up an oemof-solph EnergySystem.
+"""
+This module holds Classes and Functions for solving linear optimisation
+problems based on tabular data.
+
+Johannes Röder <johannes.roeder@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 
@@ -178,7 +182,7 @@ class DistrictScenario(Scenario):
         logging.info("Scenario saved as excel file to {0}".format(filename))
 
     def dump(self, path=None, filename=None):
-        """Dump energysystem of District scenario."""
+        """Dump results of District scenario."""
         if path is None:
             bpath = os.path.join(os.path.expanduser("~"), ".q100opt")
             if not os.path.isdir(bpath):
@@ -470,7 +474,15 @@ class ParetoFront(DistrictScenario):
         return df_pareto
 
     def calc_pareto_front(self, dump_esys=False, **kwargs):
-        """Calculates the Pareto front for all emission limits."""
+        """
+        Calculates the Pareto front for a given number of points, or
+        for given emission limits.
+
+        First, the cost-optimal and emission optimal solutions are calculated.
+        Therefore, two optimisation runs are performed.
+        For the emission optimisation, the table_collection is prepared by
+        exchanging the `variable_cost` values and the `emission_factor` values.
+        """
         if self.table_collection is not None:
             self.table_collection_co2opt = \
                 co2_optimisation(self.table_collection)
@@ -549,8 +561,13 @@ class ParetoFront(DistrictScenario):
             "Pareto front table saved as xlsx to {0}".format(path_pareto))
 
     def dump(self, path=None, filename=None):
-        """Dumps the pareto front instance."""
+        """
+        Dumps the results of the pareto front instance.
 
+        The oemof.solph.EnergySystems and oemof.solph.Models of the
+        q100opt.DistrictScenarios are removed before dumping, only the results
+        are dumped.
+        """
         # delete all oemof.solph.EnergySystems and oemof.solph.Models
         for k, v in self.__dict__.items():
             if hasattr(v, 'es') or hasattr(v, 'model'):
@@ -717,6 +734,9 @@ def load_pareto_front(path, filename):
 
 def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
                       number=2, dist_type='linear', off_set=1):
+    """
+    TODO: Maybe remove function, it is not used at the moment.
+    """
 
     # some base attributes
     es_attr = {
@@ -794,6 +814,19 @@ def calc_pareto_front(inputpath=None, scenario_name=None, outputpath=None,
 
 
 def co2_optimisation(d_data_origin):
+    """
+    Takes a table collection and exchanges the flow values for
+    `variable_costs` and `emission_factor`.
+
+    Parameters
+    ----------
+    d_data_origin : dict
+        original table_collection for cost optimisation.
+
+    Returns
+    -------
+    dict : table_collection for emission optimisation.
+    """
 
     d_data = deepcopy(d_data_origin)
 
