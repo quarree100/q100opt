@@ -536,7 +536,7 @@ def get_trafo_flow(results, label_bus):
         if x[1].label == label_bus
     ]
 
-    l_table = [results[x]['sequences'] for x in flows]
+    l_table = [results[x]['sequences']['flow'] for x in flows]
     l_labels = [x[0].label for x in flows]
 
     df_seq = pd.concat(l_table, axis=1, join='inner')
