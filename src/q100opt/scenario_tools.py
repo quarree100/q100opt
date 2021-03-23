@@ -98,7 +98,8 @@ class DistrictScenario(Scenario):
                 ValueError("The model must be created first.")
         return self
 
-    def solve(self, with_duals=False, tee=True, logfile=None, solver=None):
+    def solve(self, with_duals=False, tee=True, logfile=None, solver=None,
+              solver_cmdline_options=None):
 
         if self.es is None:
             self.table2es()
@@ -121,7 +122,8 @@ class DistrictScenario(Scenario):
             logging.info("Store lp-file in {0}.".format(filename))
 
         self.model.solve(
-            solver=solver, solve_kwargs={"tee": tee, "logfile": logfile}
+            solver=solver, solve_kwargs={"tee": tee, "logfile": logfile},
+            cmdline_options=solver_cmdline_options,
         )
 
         # store directly at district energy system
@@ -231,6 +233,7 @@ class DistrictScenario(Scenario):
         self.analyse_emissions()
         self.analyse_kpi()
         self.analyse_sequences()
+        self.results['sum'] = self.results['sequences'].sum()
         self.analyse_boundary_flows()
         self.analyse_heat_generation_flows(heat_bus_label=heat_bus_label)
         self.analyse_heat_bus(heat_bus_label=heat_bus_label)
