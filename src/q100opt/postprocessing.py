@@ -551,7 +551,12 @@ def get_trafo_flow(results, label_bus):
 def analyse_bus(results, bus_label):
     """..."""
     df_seq = solph.views.node(results, bus_label)["sequences"]
-    df_seq.columns = [x[0] for x in df_seq.columns]
+    df_seq.columns = pd.MultiIndex.from_tuples(df_seq.columns)
+
+    idx = pd.IndexSlice
+    df_seq = df_seq.loc[:, idx[:, "flow"]]
+    df_seq.columns = df_seq.columns.get_level_values(0)
+
     df_sum = df_seq.sum()
 
     return {'sum': df_sum,
