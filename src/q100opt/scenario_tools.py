@@ -98,14 +98,47 @@ class DistrictScenario(Scenario):
                 ValueError("The model must be created first.")
         return self
 
+    def add_couple_invest_contr(self, couple_invest_flow):
+        """Adds a solph.contraint for coupling investment flows.
+
+        syntax of couple_invest_flow:
+
+            couple_invest_flow={
+                'flow1': ("label_from", "label_to"),
+                'flow2': ("label_from", "label_to"),
+            }
+
+        Make sure, that these flows are InvestmentFlows.
+        """
+        flow1_from = self.es.groups[couple_invest_flow['flow1'][0]]
+        flow1_to = self.es.groups[couple_invest_flow['flow1'][1]]
+        investflow_1 = \
+            self.model.InvestmentFlow.invest[flow1_from, flow1_to]
+
+        flow2_from = self.es.groups[couple_invest_flow['flow2'][0]]
+        flow2_to = self.es.groups[couple_invest_flow['flow2'][1]]
+        investflow_2 = \
+            self.model.InvestmentFlow.invest[flow2_from, flow2_to]
+
+        solph.constraints.equate_variables(
+            self.model,
+            investflow_1,
+            investflow_2,
+            factor1=1,
+            name="couple_investment_flows"
+        )
+
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None,
-              solver_cmdline_options=None):
+              solver_cmdline_options=None, couple_invest_flow=None):
 
         if self.es is None:
             self.table2es()
 
         self.create_model()
         self.add_emission_constr()
+
+        if couple_invest_flow is not None:
+            self.add_couple_invest_contr(couple_invest_flow)
 
         logging.info("Optimising using {0}.".format(solver))
 
