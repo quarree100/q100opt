@@ -239,6 +239,9 @@ def add_sources(tab, busd, timeseries=None):
 
     for _, cs in tab.iterrows():
 
+        cs = cs.copy()
+        cs.dropna(inplace=True)
+
         flow_attr = get_flow_att(cs, timeseries)
 
         io = get_invest_obj(cs)
@@ -279,23 +282,26 @@ def add_sources_fix(tab, busd, timeseries):
     """
     sources_fix = []
 
-    for _, l in tab.iterrows():
+    for _, sf in tab.iterrows():
+
+        sf = sf.copy()
+        sf.dropna(inplace=True)
 
         flow_attr = {}
 
-        io = get_invest_obj(l)
+        io = get_invest_obj(sf)
 
         if io is not None:
             flow_attr['nominal_value'] = None
         else:
-            flow_attr['nominal_value'] = l['flow.nominal_value']
+            flow_attr['nominal_value'] = sf['flow.nominal_value']
 
-        flow_attr['fix'] = timeseries[l['label'] + '.fix'].values
+        flow_attr['fix'] = timeseries[sf['label'] + '.fix'].values
 
         sources_fix.append(
             solph.Source(
-                label=l['label'],
-                outputs={busd[l['to']]: solph.Flow(
+                label=sf['label'],
+                outputs={busd[sf['to']]: solph.Flow(
                     **flow_attr, investment=io)})
         )
 
@@ -325,6 +331,9 @@ def add_sinks(tab, busd, timeseries=None):
     sinks = []
 
     for _, cs in tab.iterrows():
+
+        cs = cs.copy()
+        cs.dropna(inplace=True)
 
         flow_attr = get_flow_att(cs, timeseries)
 
@@ -362,6 +371,9 @@ def add_sinks_fix(tab, busd, timeseries):
 
     for _, cs in tab.iterrows():
 
+        cs = cs.copy()
+        cs.dropna(inplace=True)
+
         sinks_fix.append(
             solph.Sink(
                 label=cs['label'],
@@ -392,6 +404,9 @@ def add_storages(tab, busd):
 
     for _, s in tab.iterrows():
 
+        s = s.copy()
+        s.dropna(inplace=True)
+
         att = list(s.index)
 
         att_storage = [
@@ -419,6 +434,10 @@ def add_storages(tab, busd):
 
         if io is not None:
             sto_attr['nominal_storage_capacity'] = None
+            # makes sure that not both constraint `nominal_value` and
+            # `invest_relation_input_output` are set in investment case:
+            # in_attr = {}
+            # out_attr = {}
 
         storages.append(
             solph.components.GenericStorage(
