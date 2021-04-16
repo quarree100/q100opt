@@ -179,6 +179,7 @@ def plot_graph(pos, grph, plot=True):
     bus_gas_keys = list()
     bus_el_keys = list()
     bus_heat_keys = list()
+    bus_H2_keys = list()
     trans_keys = list()
     nets_keys = list()
     store_keys = list()
@@ -193,6 +194,8 @@ def plot_graph(pos, grph, plot=True):
             bus_el_keys.append(i)
         elif x == 'b_he':
             bus_heat_keys.append(i)
+        elif x == 'b_H2':
+            bus_H2_keys.append(i)
         elif y == 'st':
             store_keys.append(i)
         elif y == 't_':
@@ -205,6 +208,7 @@ def plot_graph(pos, grph, plot=True):
     bus_gas_nodes = bus_gas_keys
     bus_el_nodes = bus_el_keys
     bus_heat_nodes = bus_heat_keys
+    bus_H2_nodes = bus_H2_keys
     trans_nodes = trans_keys
     nets_nodes = nets_keys
     store_nodes = store_keys
@@ -218,6 +222,9 @@ def plot_graph(pos, grph, plot=True):
 
     buses_heat = grph.subgraph(bus_heat_nodes)
     pos_buses_heat = {x: pos[x] for x in bus_heat_keys}
+
+    buses_H2 = grph.subgraph(bus_H2_nodes)
+    pos_buses_H2 = {x: pos[x] for x in bus_H2_keys}
 
     trans = grph.subgraph(trans_nodes)
     pos_trans = {x: pos[x] for x in trans_keys}
@@ -242,6 +249,8 @@ def plot_graph(pos, grph, plot=True):
             node_size=sizenodes)
     nx.draw(buses_heat, pos=pos_buses_heat, node_shape='p',
             node_color='#f95c8b', node_size=sizenodes)
+    nx.draw(buses_H2, pos=pos_buses_H2, node_shape='p',
+            node_color='#fe6ace', node_size=sizenodes)
     nx.draw(trans, pos=pos_trans, node_shape='s', node_color='#85a8c2',
             node_size=sizenodes)
     nx.draw(sources, pos=pos_sources, node_shape='P', node_color='#7FFFD4',
@@ -375,7 +384,8 @@ def grouped_bar_plot(df, show=True, ylabel=None, xlabel="Label", title=None):
         plt.show()
 
 
-def plot_invest_values(pf, title=None, show=True, path=None):
+def plot_invest_values(pf, title=None, show=True, path=None,
+                       filename="investment.png"):
     """
     Creates plot for the investment decisions (converter and storges)
     of the pareto front class.
@@ -409,13 +419,16 @@ def plot_invest_values(pf, title=None, show=True, path=None):
     ax[0].set_ylabel('Installed capacity [kW]')
     ax[0].set_xlabel('Energy converter units')
     ax[0].legend()
+    ax[0].grid(axis='y')
 
     df_invest_store.plot(ax=ax[1], kind='bar')
     ax[1].set_ylabel('Installed capacity [kWh]')
     ax[1].set_xlabel('Energy storages')
     ax[1].legend()
+    ax[1].grid(axis='y')
 
     plt.legend()
+
     # fig.title(title)
     fig.suptitle(title)
     fig.tight_layout()
@@ -424,4 +437,4 @@ def plot_invest_values(pf, title=None, show=True, path=None):
         plt.show()
 
     if path:
-        fig.savefig(os.path.join(path, "investments_" + title + ".png"))
+        fig.savefig(os.path.join(path, filename))
