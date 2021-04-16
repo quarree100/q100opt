@@ -19,6 +19,7 @@ import warnings
 
 import oemof.solph as solph
 import pandas as pd
+import numpy as np
 import pickle
 
 from functools import reduce
@@ -492,6 +493,16 @@ class ParetoFront(DistrictScenario):
             interval = (self.e_max - e_start) / (self.number - 1)
             for i in range(self.number):
                 limits.append(e_start + i * interval)
+        elif self.dist_type == 'logarithmic':
+            limits = []
+            e_start = self.e_min + self.off_set
+            lim_last = self.e_max
+            limits.append(lim_last)
+            for i in range(self.number-2):
+                lim_last = lim_last - (lim_last - e_start) * 0.5
+                limits.append(lim_last)
+            limits.append(e_start)
+
         else:
             raise ValueError(
                 'No other method than "linear" for calculation the emission'
