@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
+
 This module holds Classes and Functions for solving linear optimisation
 problems based on tabular data.
 
@@ -110,7 +111,8 @@ class DistrictScenario(Scenario):
         return self
 
     def add_couple_invest_contr(self, couple_invest_flow):
-        """Adds a solph.contraint for coupling investment flows.
+        """
+        Adds a solph.contraint for coupling investment flows.
 
         syntax of couple_invest_flow:
 
@@ -397,7 +399,8 @@ class DistrictScenario(Scenario):
         return self.results['sequences']
 
     def analyse_boundary_flows(self):
-        """Returns the sequences and sums of all sinks and sources.
+        """
+        Returns the sequences and sums of all sinks and sources.
 
         See postprocessing.get_boundary_flows!
         """
@@ -531,7 +534,7 @@ class ParetoFront(DistrictScenario):
         index = list(self.district_scenarios.keys())
         columns = ['costs', 'emissions']
         df_pareto = pd.DataFrame(index=index, columns=columns)
-        for r, c in df_pareto.iterrows():
+        for r, _ in df_pareto.iterrows():
             df_pareto.at[r, 'costs'] = \
                 self.district_scenarios[r].results['costs']
             df_pareto.at[r, 'emissions'] = \
@@ -634,7 +637,7 @@ class ParetoFront(DistrictScenario):
         are dumped.
         """
         # delete all oemof.solph.EnergySystems and oemof.solph.Models
-        for k, v in self.__dict__.items():
+        for _, v in self.__dict__.items():
             if hasattr(v, 'es') or hasattr(v, 'model'):
                 setattr(v, 'es', None)
                 setattr(v, 'model', None)
@@ -662,7 +665,7 @@ class ParetoFront(DistrictScenario):
         Performs the analyse_results method of the DistrictScenario class
         for all scenarios of the pareto front.
         """
-        for e_key, des in self.district_scenarios.items():
+        for _, des in self.district_scenarios.items():
             des.analyse_results(heat_bus_label=heat_bus_label,
                                 elec_bus_label=elec_bus_label)
 
@@ -677,7 +680,9 @@ class ParetoFront(DistrictScenario):
         self.results['scalars'] = self.get_all_scalars()
 
     def analyse_kpi(self, label_end_energy=None):
-        """Performs some postprocessing methods for all DistrictEnergySystems.
+        """
+        Performs some postprocessing methods for all
+        DistrictEnergySystems.
         """
         if label_end_energy is None:
             label_end_energy = ['demand_heat']

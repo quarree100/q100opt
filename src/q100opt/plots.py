@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
+
 This module holds a diverse mixture of plotting functions.
 
 Work in progress!
@@ -24,7 +25,6 @@ from .postprocessing import get_invest_storages
 
 def plot_invest_flows(results):
     """Plots all investment flows in a bar plot."""
-
     flows_invest = get_invest_converter(results)
 
     invest_val = [results[x]['scalars']['invest'] for x in flows_invest]
@@ -38,7 +38,6 @@ def plot_invest_flows(results):
 
 def plot_invest_storages(results):
     """Plots investment storages as bar plot.s"""
-
     store_invest = get_invest_storages(results)
 
     invest_val_s = [results[x]['scalars']['invest'] for x in store_invest]
@@ -172,7 +171,6 @@ def draw_graph(grph, edge_labels=True, node_color="#AFAFAF",
 
 def plot_graph(pos, grph, plot=True):
     """Plots an EnergySystem graph."""
-
     pos_keys = list()
 
     for i in pos.keys():
@@ -292,7 +290,6 @@ def plot_bus_stack(results, label_bus='b_heat', label_demand='t_pump_heatgrid',
     -------
     Nothing, shows a plot.
     """
-
     timeindex = next(iter(results.values()))['sequences'].index
 
     if interval is None:

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
+
 This module holds functions processing the results
 of an oemof.solph optimisation model, that are used by methods of the classes
 `q100opt.scenario_tools.DistrictScenario` and
@@ -22,7 +23,8 @@ from oemof.solph import views
 
 
 def analyse_emissions(results):
-    """Performs analysis of emissions.
+    """
+    Performs analysis of emissions.
 
     Parameters
     ----------
@@ -38,7 +40,8 @@ def analyse_emissions(results):
 
 
 def analyse_costs(results):
-    """Performs a cost analysis.
+    """
+    Performs a cost analysis.
 
     Parameters
     ----------
@@ -65,7 +68,8 @@ def analyse_costs(results):
 
 
 def analyse_capex(results):
-    """Analysis and Summary of the investment costs of the EnergySystem.
+    """
+    Analysis and Summary of the investment costs of the EnergySystem.
 
     Parameters
     ----------
@@ -220,7 +224,8 @@ def get_invest_table(results, keys):
 
 
 def analyse_flow_attribute(des_results, keyword='variable_costs'):
-    """Analysis and Summary of flow attribute keyword of the EnergySystem.
+    """
+    Analysis and Summary of flow attribute keyword of the EnergySystem.
 
     Parameters
     ----------
@@ -410,7 +415,6 @@ def get_attr_flow_results(des_results, key='variable_costs'):
 
 def get_all_sequences(results):
     """..."""
-
     d_node_types = {
         'sink': solph.Sink,
         'source': solph.Source,
@@ -460,7 +464,8 @@ def get_all_sequences(results):
 
 
 def get_boundary_flows(results):
-    """Gets the results of flows of the sinks and sources.
+    """
+    Gets the results of flows of the sinks and sources.
 
     Parameters
     ----------
@@ -506,7 +511,8 @@ def get_boundary_flows(results):
 
 
 def get_trafo_flow(results, label_bus):
-    """Returns the flows from a solph.Transformer for a given solph.Bus.
+    """
+    Returns the flows from a solph.Transformer for a given solph.Bus.
 
     Parameters
     ----------
