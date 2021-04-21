@@ -1,10 +1,8 @@
 from q100opt.setup_model import load_csv_data
 from q100opt.scenario_tools import DistrictScenario
-from q100opt import postprocessing as pp
 from q100opt import plots as plots
 from oemof.network.graph import create_nx_graph
 import logging
-import networkx as nx
 
 table_collection = load_csv_data('data')
 
@@ -38,17 +36,23 @@ plots.plot_buses(res=results, es=ds.es)
 # ds.dump()
 
 # plot esys graph I (Luis)
-grph = create_nx_graph(ds.es)
-pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
-plots.plot_graph(pos, grph)
-logging.info('Energy system Graph OK.')
+try:
+    import networkx as nx
 
-# plot esys graph II (oemof examples)
-graph = create_nx_graph(ds.es)
-plots.draw_graph(
-    grph=graph,
-    plot=True,
-    layout="neato",
-    node_size=1000,
-    node_color={"b_heat_gen": "#cd3333", "b_el_ez": "#cd3333"},
-)
+    grph = create_nx_graph(ds.es)
+    pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
+    plots.plot_graph(pos, grph)
+    logging.info('Energy system Graph OK.')
+
+    # plot esys graph II (oemof examples)
+    graph = create_nx_graph(ds.es)
+    plots.draw_graph(
+        grph=graph,
+        plot=True,
+        layout="neato",
+        node_size=1000,
+        node_color={"b_heat_gen": "#cd3333", "b_el_ez": "#cd3333"},
+    )
+
+except ImportError:
+    print("Need to install networkx to create energy system graph.")
