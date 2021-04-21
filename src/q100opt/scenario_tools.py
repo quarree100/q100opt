@@ -362,7 +362,9 @@ class DistrictScenario(Scenario):
             self.results['sequences'] = \
                 get_all_sequences(self.results['main'])
 
+            ind_length = len(self.results['timeindex'])
             df_param = self.results['table_collection']['Timeseries'].copy()
+            df_param = df_param.iloc[:ind_length]
 
             list_of_tuples = [
                 ('parameter', x.split('.')[0], x.split('.')[1])
