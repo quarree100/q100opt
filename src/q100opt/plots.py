@@ -196,7 +196,7 @@ def plot_graph(pos, grph, plot=True):
             bus_heat_keys.append(i)
         elif x == 'b_H2':
             bus_H2_keys.append(i)
-        elif y == 'st':
+        elif y == 's_':
             store_keys.append(i)
         elif y == 't_':
             trans_keys.append(i)
