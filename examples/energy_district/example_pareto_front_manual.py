@@ -1,5 +1,6 @@
-from q100opt.scenario_tools import ParetoFront
 from matplotlib import pyplot as plt
+
+from q100opt.scenario_tools import ParetoFront
 from q100opt.setup_model import load_csv_data
 
 table_collection = load_csv_data('data')

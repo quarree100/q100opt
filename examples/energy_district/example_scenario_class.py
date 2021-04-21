@@ -1,8 +1,10 @@
-from q100opt.setup_model import load_csv_data
-from q100opt.scenario_tools import DistrictScenario
-from q100opt import plots as plots
-from oemof.network.graph import create_nx_graph
 import logging
+
+from oemof.network.graph import create_nx_graph
+
+from q100opt import plots as plots
+from q100opt.scenario_tools import DistrictScenario
+from q100opt.setup_model import load_csv_data
 
 table_collection = load_csv_data('data')
 

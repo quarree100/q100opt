@@ -1,6 +1,7 @@
 import oemof.solph as solph
 import pandas as pd
 
+import q100opt.plots as plots
 from q100opt.setup_model import add_buses
 from q100opt.setup_model import add_sinks
 from q100opt.setup_model import add_sinks_fix
@@ -10,7 +11,6 @@ from q100opt.setup_model import add_storages
 from q100opt.setup_model import add_transformer
 from q100opt.setup_model import check_active
 from q100opt.setup_model import load_csv_data
-import q100opt.plots as plots
 
 # load data
 nd = load_csv_data('data')

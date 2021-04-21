@@ -13,17 +13,12 @@ Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 SPDX-License-Identifier: MIT
 
 """
-import oemof.solph as solph
-from oemof.solph import views
-
 import logging
-import pandas as pd
-import numpy as np
 
-try:
-    import pygraphviz
-except ImportError:
-    logging.info('Module pygraphviz not found: Graph was not plotted.')
+import numpy as np
+import oemof.solph as solph
+import pandas as pd
+from oemof.solph import views
 
 
 def analyse_emissions(results):
@@ -119,8 +114,8 @@ def get_invest_converter(results):
     return [
         x for x in results.keys()
         if hasattr(results[x]['scalars'], 'invest')
-        if isinstance(x[0], solph.Transformer) or
-           isinstance(x[0], solph.Source)
+        if isinstance(x[0], solph.Transformer) or isinstance(
+            x[0], solph.Source)
     ]
 
 
@@ -218,8 +213,9 @@ def get_invest_table(results, keys):
                     for x in keys]
     df['invest_value'] = [results['main'][x]['scalars']['invest']
                           for x in keys]
-    df['costs'] = df['invest_value'] * df['ep_costs'] + \
-                  df['offset'] * np.sign(df['invest_value'])
+    df['costs'] = df['invest_value'] * df['ep_costs'] + df[
+        'offset'] * np.sign(df['invest_value'])
+
     return df
 
 
@@ -302,9 +298,9 @@ def analyse_flow_attribute(des_results, keyword='variable_costs'):
         df_summary[key_product] / df_summary['flow']
 
     df_mean = \
-        df.iloc[:, df.columns.get_level_values(2) == keyword]\
-            .mean().unstack(level=2).rename(
-            columns={keyword: 'var_' + key_product + '_av_param'})
+        df.iloc[:, df.columns.get_level_values(2) == keyword].mean().unstack(
+            level=2).rename(columns={
+                keyword: 'var_' + key_product + '_av_param'})
 
     df_summary = df_summary.join(df_mean)
 
@@ -425,7 +421,6 @@ def get_all_sequences(results):
     l_df = []
 
     for typ, solph_class in d_node_types.items():
-
         group = {
             k: v["sequences"]
             for k, v in results.items()

@@ -11,13 +11,15 @@ SPDX-License-Identifier: MIT
 
 """
 import os
-import pandas as pd
+
+import networkx as nx
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 from oemof import solph as solph
-import networkx as nx
 
-from .postprocessing import get_invest_converter, get_invest_storages
+from .postprocessing import get_invest_converter
+from .postprocessing import get_invest_storages
 
 
 def plot_invest_flows(results):
@@ -304,7 +306,7 @@ def plot_bus_stack(results, label_bus='b_heat', label_demand='t_pump_heatgrid',
     flows_from_without_demand = [x for x in flows_from_bus
                                  if x[1].label != label_demand]
 
-    #build df
+    # build df
     df_in = pd.DataFrame(index=timeindex)
     for flow in flows_to_bus:
         df_in[flow[0].label] = r[flow]["sequences"]["flow"]

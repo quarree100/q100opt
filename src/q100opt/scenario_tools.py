@@ -4,7 +4,8 @@
 This module holds Classes and Functions for solving linear optimisation
 problems based on tabular data.
 
-Please use this module with care. It is work in progress!
+Please use this module with care. It is work in progress and properly
+tested yet!
 
 Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 
@@ -14,22 +15,31 @@ SPDX-License-Identifier: MIT
 import datetime
 import logging
 import os
-from copy import deepcopy
+import pickle
 import warnings
+from copy import deepcopy
 
 import oemof.solph as solph
 import pandas as pd
-import numpy as np
-import pickle
 
-from functools import reduce
 from .external import Scenario
-from .postprocessing import analyse_costs, analyse_emissions, \
-    get_boundary_flows, get_trafo_flow, \
-    analyse_bus, get_all_sequences
-from .setup_model import load_csv_data, check_active,\
-    check_nonconvex_invest_type, add_transformer, add_storages, add_sinks, \
-    add_sources, add_sources_fix, add_buses, add_sinks_fix, add_links
+from .postprocessing import analyse_bus
+from .postprocessing import analyse_costs
+from .postprocessing import analyse_emissions
+from .postprocessing import get_all_sequences
+from .postprocessing import get_boundary_flows
+from .postprocessing import get_trafo_flow
+from .setup_model import add_buses
+from .setup_model import add_links
+from .setup_model import add_sinks
+from .setup_model import add_sinks_fix
+from .setup_model import add_sources
+from .setup_model import add_sources_fix
+from .setup_model import add_storages
+from .setup_model import add_transformer
+from .setup_model import check_active
+from .setup_model import check_nonconvex_invest_type
+from .setup_model import load_csv_data
 
 
 class DistrictScenario(Scenario):
@@ -898,7 +908,7 @@ def co2_optimisation(d_data_origin):
             if 'emission_factor' in x
         ]
 
-        prefix = set([x.split('.')[0] for x in var_cost_col] + \
+        prefix = set([x.split('.')[0] for x in var_cost_col] +
                      [x.split('.')[0] for x in var_emission_col])
 
         for pre in prefix:
