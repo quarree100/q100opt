@@ -130,7 +130,7 @@ class DistrictScenario(Scenario):
         )
 
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None,
-              solver_cmdline_options=None, couple_invest_flow=None):
+              couple_invest_flow=None, **kwargs):
 
         if self.es is None:
             self.table2es()
@@ -155,9 +155,13 @@ class DistrictScenario(Scenario):
             )
             logging.info("Store lp-file in {0}.".format(filename))
 
+        solver_kwargs = {
+            "solver_cmdline_options": kwargs.get(
+                "solver_cmdline_options", {})}
+
         self.model.solve(
             solver=solver, solve_kwargs={"tee": tee, "logfile": logfile},
-            cmdline_options=solver_cmdline_options,
+            **solver_kwargs
         )
 
         # store directly at district energy system
