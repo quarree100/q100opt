@@ -44,6 +44,11 @@ def load_csv_data(path):
     return dct
 
 
+def load_xlsx_data(filename):
+    """Reads all sheets of xlsx file into dictionary."""
+    return pd.read_excel(filename, sheet_name=None)
+
+
 def check_active(dct):
     """
     Checks for active components.
