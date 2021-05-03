@@ -2,6 +2,10 @@
 
 """Function for reading data and setting up an oemof-solph EnergySystem.
 
+Please use this module with care. It is work in progress!
+
+Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
+
 SPDX-License-Identifier: MIT
 
 """
@@ -32,10 +36,17 @@ def load_csv_data(path):
     for name in os.listdir(path):
 
         key = name.split('.csv')[0]
+
         val = pd.read_csv(os.path.join(path, name))
+
         dct.update([(key, val)])
 
     return dct
+
+
+def load_xlsx_data(filename):
+    """Reads all sheets of xlsx file into dictionary."""
+    return pd.read_excel(filename, sheet_name=None)
 
 
 def check_active(dct):
@@ -99,11 +110,11 @@ def add_buses(table):
 
     Returns
     -------
-    nodes : list
-        A list with all oemof-solph Buses of the Dataframe table.
-    busd : dict
-        Dictionary with all oemof Bus object. Keys are equal to the label of
-        the bus.
+    tuple : a tuple containing:
+        - nodes ([list]): A list with all oemof-solph Buses of the
+            Dataframe table.
+        - busd ([dict]): Dictionary with all oemof Bus object.
+            Keys are equal to the label of the bus.
 
     Examples
     --------
@@ -146,6 +157,9 @@ def get_invest_obj(row):
     the prefix`invest.`, if attribute 'investment' occurs, and if attribute
     `investment` is set to 1.
 
+    If the invest attribute "offset" is given and if it is > 0, the invest
+    attribute "nonconvex=True" is added.
+
     Parameters
     ----------
     row : pd.Series
@@ -166,6 +180,10 @@ def get_invest_obj(row):
                        if x.split('.')[0] == 'invest']
             for ia in ia_list:
                 invest_attr[ia] = row['invest.' + ia]
+
+            if 'offset' in ia_list and invest_attr['offset'] > 0:
+                invest_attr['nonconvex'] = True
+
             invest_object = solph.Investment(**invest_attr)
 
         else:
@@ -190,7 +208,8 @@ def get_flow_att(row, ts):
     -------
     dict : All Flow specific attribues.
     """
-
+    row = row.copy()
+    row.dropna(inplace=True)
     att = list(row.index)
     fa_list = [x.split('.')[1] for x in att if x.split('.')[0] == 'flow']
 
@@ -224,6 +243,9 @@ def add_sources(tab, busd, timeseries=None):
     sources = []
 
     for _, cs in tab.iterrows():
+
+        cs = cs.copy()
+        cs.dropna(inplace=True)
 
         flow_attr = get_flow_att(cs, timeseries)
 
@@ -265,23 +287,26 @@ def add_sources_fix(tab, busd, timeseries):
     """
     sources_fix = []
 
-    for _, l in tab.iterrows():
+    for _, sf in tab.iterrows():
+
+        sf = sf.copy()
+        sf.dropna(inplace=True)
 
         flow_attr = {}
 
-        io = get_invest_obj(l)
+        io = get_invest_obj(sf)
 
         if io is not None:
             flow_attr['nominal_value'] = None
         else:
-            flow_attr['nominal_value'] = l['flow.nominal_value']
+            flow_attr['nominal_value'] = sf['flow.nominal_value']
 
-        flow_attr['fix'] = timeseries[l['label'] + '.fix'].values
+        flow_attr['fix'] = timeseries[sf['label'] + '.fix'].values
 
         sources_fix.append(
             solph.Source(
-                label=l['label'],
-                outputs={busd[l['to']]: solph.Flow(
+                label=sf['label'],
+                outputs={busd[sf['to']]: solph.Flow(
                     **flow_attr, investment=io)})
         )
 
@@ -311,6 +336,9 @@ def add_sinks(tab, busd, timeseries=None):
     sinks = []
 
     for _, cs in tab.iterrows():
+
+        cs = cs.copy()
+        cs.dropna(inplace=True)
 
         flow_attr = get_flow_att(cs, timeseries)
 
@@ -348,12 +376,15 @@ def add_sinks_fix(tab, busd, timeseries):
 
     for _, cs in tab.iterrows():
 
+        cs = cs.copy()
+        cs.dropna(inplace=True)
+
         sinks_fix.append(
             solph.Sink(
                 label=cs['label'],
                 inputs={busd[cs['from']]: solph.Flow(
                     nominal_value=cs['nominal_value'],
-                    fix=timeseries[cs['label'] + '.fix']
+                    fix=timeseries[cs['label'] + '.fix'].values
                 )})
         )
 
@@ -378,29 +409,46 @@ def add_storages(tab, busd):
 
     for _, s in tab.iterrows():
 
+        s = s.copy()
+        s.dropna(inplace=True)
+
         att = list(s.index)
-        fa_list = [
+
+        att_storage = [
             x.split('.')[1] for x in att if x.split('.')[0] == 'storage']
 
-        sto_attr = {}
+        att_inflow = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'inflow']
 
-        for fa in fa_list:
+        att_outflow = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'outflow']
+
+        sto_attr = {}
+        for fa in att_storage:
             sto_attr[fa] = s['storage.' + fa]
+
+        in_attr = {}
+        for fa in att_inflow:
+            in_attr[fa] = s['inflow.' + fa]
+
+        out_attr = {}
+        for fa in att_outflow:
+            out_attr[fa] = s['outflow.' + fa]
 
         io = get_invest_obj(s)
 
         if io is not None:
             sto_attr['nominal_storage_capacity'] = None
-            sto_attr['invest_relation_input_capacity'] = \
-                s['invest_relation_input_capacity']
-            sto_attr['invest_relation_output_capacity'] = \
-                s['invest_relation_output_capacity']
+            # makes sure that not both constraint `nominal_value` and
+            # `invest_relation_input_output` are set in investment case:
+            # in_attr = {}
+            # out_attr = {}
 
         storages.append(
             solph.components.GenericStorage(
                 label=s['label'],
-                inputs={busd[s['bus']]: solph.Flow()},
-                outputs={busd[s['bus']]: solph.Flow()},
+                inputs={busd[s['bus']]: solph.Flow(**in_attr)},
+                outputs={busd[s['bus']]: solph.Flow(**out_attr)},
                 investment=io,
                 **sto_attr,
             )
@@ -430,47 +478,68 @@ def add_transformer(tab, busd, timeseries=None):
 
     for _, t in tab.iterrows():
 
-        flow_out1_attr = get_flow_att(t, timeseries)
+        row = t.copy()
+        row.dropna(inplace=True)
+        att = list(row.index)
 
-        io = get_invest_obj(t)
+        flow_out1_attr = get_flow_att(row, timeseries)
+
+        att_inflow1 = [
+            x.split('.')[1] for x in att if x.split('.')[0] == 'inflow1']
+
+        in_attr1 = {}
+        for fa in att_inflow1:
+            in_attr1[fa] = row['inflow1.' + fa]
+
+        io = get_invest_obj(row)
 
         if io is not None:
             flow_out1_attr['nominal_value'] = None
 
-        d_in = {busd[t['in_1']]: solph.Flow()}
+        d_in = {busd[row['in_1']]: solph.Flow(**in_attr1)}
 
-        d_out = {busd[t['out_1']]: solph.Flow(
-            investment=io, **flow_out1_attr
+        if 'nonconvex_flow' in row.index:
+            if row['nonconvex_flow'] == 1:
+                nc = solph.NonConvex()
+            else:
+                nc = None
+        else:
+            nc = None
+
+        d_out = {busd[row['out_1']]: solph.Flow(
+            investment=io,
+            nonconvex=nc,
+            **flow_out1_attr
         )}
 
         # check if timeseries in conversion factors and convert to float
-        att = list(t.index)
+        att = list(row.index)
         eff_list = [x for x in att if x.split('_')[0] == 'eff']
         d_eff = {}
         for eff in eff_list:
-            if t[eff] == 'series':
-                d_eff[eff] = timeseries[t['label'] + '.' + eff]
+            if row[eff] == 'series':
+                d_eff[eff] = timeseries[row['label'] + '.' + eff]
             else:
-                d_eff[eff] = float(t[eff])
+                d_eff[eff] = float(row[eff])
 
-        cv = {busd[t['in_1']]: d_eff['eff_in_1'],
-              busd[t['out_1']]: d_eff['eff_out_1']}
+        cv = {busd[row['in_1']]: d_eff['eff_in_1'],
+              busd[row['out_1']]: d_eff['eff_out_1']}
 
         # update inflows and conversion factors, if a second inflow bus label
         # is given
-        if not (t['in_2'] == '0' or t['in_2'] == 0):
-            d_in.update({busd[t['in_2']]: solph.Flow()})
-            cv.update({busd[t['in_2']]: d_eff['eff_in_2']})
+        if not (row['in_2'] == '0' or row['in_2'] == 0):
+            d_in.update({busd[row['in_2']]: solph.Flow()})
+            cv.update({busd[row['in_2']]: d_eff['eff_in_2']})
 
         # update outflows and conversion factors, if a second outflow bus label
         # is given
-        if not (t['out_2'] == '0' or t['out_2'] == 0):
-            d_out.update({busd[t['out_2']]: solph.Flow()})
-            cv.update({busd[t['out_2']]: d_eff['eff_out_2']})
+        if not (row['out_2'] == '0' or row['out_2'] == 0):
+            d_out.update({busd[row['out_2']]: solph.Flow()})
+            cv.update({busd[row['out_2']]: d_eff['eff_out_2']})
 
         transformer.append(
             solph.Transformer(
-                label=t['label'],
+                label=row['label'],
                 inputs=d_in,
                 outputs=d_out,
                 conversion_factors=cv
@@ -478,3 +547,25 @@ def add_transformer(tab, busd, timeseries=None):
         )
 
     return transformer
+
+
+def add_links(tab, busd):
+    """..."""
+    links = []
+
+    for _, t in tab.iterrows():
+        links.append(
+            solph.custom.Link(
+                label=t['label'],
+                inputs={busd[t['b0']]: solph.Flow(),
+                        busd[t['b1']]: solph.Flow()},
+                outputs={busd[t['b0']]: solph.Flow(),
+                         busd[t['b1']]: solph.Flow()},
+                conversion_factors={
+                    (busd[t['b0']], busd[t['b1']]): t['cv_0>1'],
+                    (busd[t['b1']], busd[t['b0']]): t['cv_1>0'],
+                }
+            )
+        )
+
+    return links
