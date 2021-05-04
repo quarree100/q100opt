@@ -167,3 +167,8 @@ class Building:
         self.table_collection = tables
 
         return tables
+
+
+class District:
+    """District class with many buildings."""
+    pass
