@@ -936,7 +936,7 @@ def co2_optimisation(d_data_origin):
     for _, tab in d_data.items():
         if 'invest.ep_costs' in tab.columns:
             tab['invest.ep_costs'] = 0.0000001
-        if 'invest.offet' in tab.columns:
+        if 'invest.offset' in tab.columns:
             tab['invest.offset'] = 0
 
     return d_data
