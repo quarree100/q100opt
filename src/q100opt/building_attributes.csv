@@ -1,0 +1,26 @@
+Group,Used_in,Attribute,Datatype,Description,Status
+general,both,name,str,Name or ID of building,optional
+,both,year,int,"Year of construction, e.g. 1977",optional
+,both,levels,float,Number of floor levels,optional
+,both,apartments,int,Number of apartments,optional
+,both,ground_area,float,Ground area (German: Grundfläche des Gebäudes (GF)) in m²,optional
+,both,gross_floor_area,float,Total floor area (German: Brutto Grundfläche (BGF)) in m²,optional
+,both,net_floor_area,float,Net floor area (German: NGF) in m²,optional
+roof,both,roof_1_azimuth,float,Azimuth angle of roof 1 [°]. Azimuth definition: see pvlib,optional
+,both,roof_1_pitch,float,Roof 1 pitch angle from the horizontal [°],optional
+,both,roof_1_area_total,float,Total area of roof 1 [m²],optional
+,both,roof_1_area_usable,float,Area usable for PV installation of roof 1 [m²],optional
+,both,roof_2_azimuth,float,Azimuth angle of roof 2 [°]. Azimuth definition: see pvlib,optional
+,both,roof_2_pitch,float,Roof 2 pitch angle from the horizontal [°],optional
+,both,roof_2_area_total,float,Total area of roof 2 [m²],optional
+,both,roof_2_area_usable,float,Area usable for PV installation of roof 2 [m²],optional
+,both,roof_3_azimuth,float,Azimuth angle of roof 3 [°]. Azimuth definition: see pvlib,optional
+,both,roof_3_pitch,float,Roof 3 pitch angle from the horizontal [°],optional
+,both,roof_3_area_total,float,Total area of roof 3 [m²],optional
+,both,roof_3_area_usable,float,Area usable for PV installation of roof 3 [m²],optional
+pv,operation,pv_1_installed,float,Installed PV capacity [kW] on roof 1,optional
+,operation,pv_2_installed,float,Installed PV capacity [kW] on roof 2,optional
+,operation,pv_3_installed,float,Installed PV capacity [kW] on roof 3,optional
+,investment,pv_1_max,float,Maximum PV capacity [kW] on roof 1,optional
+,investment,pv_2_max,float,Maximum PV capacity [kW] on roof 2,optional
+,investment,pv_3_max,float,Maximum PV capacity [kW] on roof 3,optional
