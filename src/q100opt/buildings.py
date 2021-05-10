@@ -121,7 +121,19 @@ class Building:
         self.results = dict()
 
     def set_pv_attributes(self, **kwargs):
-        """Set ups the PV attributes of the buildings."""
+        """Set ups the PV attributes of the buildings.
+
+        Examples
+        --------
+        Manually set PV System:
+        >>> from q100opt.buildings import Building
+        >>> my_building = Building()
+        >>> my_building.set_pv_attributes(
+        ...     pv_1_max=15,
+        ...     pv_1_profile=[0, 6, 34, 5, 0, 1]
+        ...     )
+        >>> assert(my_building.pv["potentials"]["pv_1"]["maximum"] == 15)
+        """
         self.pv.update({
             'potentials': {
                 "pv_1": {"profile": kwargs.get("pv_1_profile"),
@@ -155,7 +167,7 @@ class BuildingInvestModel(Building):
 
     def create_table_collection(self):
         """..."""
-        tables = {}
+        tables = self.table_collection
 
         # TODO : create functions for each table
 
@@ -170,18 +182,14 @@ class BuildingInvestModel(Building):
         tables.update({"Bus": buses})
 
         # 2) commodity sources and sinks
-        com = self.commodities[0]['commodities']
-        tables.update({
-            "Source": com.loc[com["type"] == "Source"],
-            "Sink": com.loc[com["type"] == "Sink"],
-            "Timeseries": self.commodities[0]['timeseries'],
-        })
+        tables.update(self.commodities)
 
         # 3) Investment Sources (PV)
         PVs = []
-        for k, v in self.pv_potential.items():
-            if v['maximum'] > 0:
-                PVs.append(k)
+        for k, v in self.pv["potentials"].items():
+            if v['maximum'] is not None:
+                if v['maximum'] > 0 and v['maximum']:
+                    PVs.append(k)
         source_fix_table = pd.DataFrame(PVs, columns=["label"])
         source_fix_table["investment"] = 1
         source_fix_table["to"] = "b_elec"
@@ -193,9 +201,9 @@ class BuildingInvestModel(Building):
         source_fix_table = source_fix_table.set_index("label")
         for pv in PVs:
             source_fix_table.at[pv, 'invest.maximum'] = \
-                self.pv_potential[pv]['maximum']
+                self.pv["potentials"][pv]['maximum']
             tables['Timeseries'][pv + '.fix'] = \
-                self.pv_potential[pv]['profile'].values
+                self.pv["potentials"][pv]['profile'].values
 
         source_fix_table.reset_index(inplace=True)
 
