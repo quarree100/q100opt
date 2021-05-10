@@ -1,7 +1,7 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from q100opt.buildings import Building
+from q100opt.buildings import BuildingInvestModel
 from q100opt.scenario_tools import ParetoFront
 import q100opt.plots as plots
 from q100opt.setup_model import load_csv_data
@@ -15,7 +15,7 @@ tech_data = pd.read_csv("data/techdata.csv", index_col=0, skiprows=1)
 
 commodity_data = load_csv_data("data/commodities")
 
-# define data, that could be in the Kataster
+# define data, that could/should be in the Kataster
 kataster = {
     'heat_load_sh': 10,         # heat load space heating [kW]
     'heat_load_hw': 4,          # heat load hot water [kW]
@@ -26,13 +26,13 @@ kataster = {
         [75, 70, 65, 55]
     ],
     'hot_water_generation': 'electric-boiler',   # type of hot water generation
-    'PV_1_maximum': 5,      # maximum kWp of PV area 1
-    'PV_2_maximum': 3,      # maximum kWp of PV area 2
-    'PV_3_maximum': 0,      # maximum kWp of PV area 2
+    'pv_1_max': 5,      # maximum kWp of PV area 1
+    'pv_2_max': 3,      # maximum kWp of PV area 2
+    'pv_3_max': 0,      # maximum kWp of PV area 2
     'Battery_maximum': 20,  # maximum capacity of LiIon Battery
 }
 
-house = Building(
+house = BuildingInvestModel(
     space_heating_demand=timeseries["E_th_RH"],
     electricity_demand=timeseries["E_el"],
     hot_water_demand=timeseries["E_th_TWE"],
@@ -41,7 +41,7 @@ house = Building(
     commodity_data=commodity_data,
     tech_data=tech_data,
     weather=weather,
-    kataster_data=kataster,
+    **kataster,
 )
 
 house.create_table_collection()
@@ -51,7 +51,7 @@ house.create_table_collection()
 house.pareto_front = ParetoFront(
     table_collection=house.table_collection,
     number_of_points=5,
-    number_of_time_steps=8760,
+    number_of_time_steps=700,
 )
 
 house.pareto_front.calc_pareto_front(solver='gurobi', tee=True)
