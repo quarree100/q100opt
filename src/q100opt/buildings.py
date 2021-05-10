@@ -86,7 +86,7 @@ class Building:
         else:
             self.commodities = None
         self.techdata = tech_data,
-        self.weather = weather,
+        self.weather_data = weather,
         self.id = name
 
         # some general buildings attributes
@@ -103,6 +103,8 @@ class Building:
             "heating": kwargs.get("space_heating_demand"),
             "hotwater": kwargs.get("hot_water_demand"),
         }
+
+        self.roof_data = None
 
         self.pv = dict()
         self.set_pv_attributes(**kwargs)
@@ -121,7 +123,7 @@ class Building:
         self.results = dict()
 
     def set_pv_attributes(self, **kwargs):
-        """Set ups the PV attributes of the buildings.
+        """Set up the PV attributes of the building.
 
         Examples
         --------
@@ -137,10 +139,13 @@ class Building:
         self.pv.update({
             'potentials': {
                 "pv_1": {"profile": kwargs.get("pv_1_profile"),
+                         "installed": kwargs.get("pv_1_installed"),
                          "maximum": kwargs.get("pv_1_max")},
                 "pv_2": {"profile": kwargs.get("pv_2_profile"),
+                         "installed": kwargs.get("pv_2_installed"),
                          "maximum": kwargs.get("pv_2_max")},
                 "pv_3": {"profile": kwargs.get("pv_3_profile"),
+                         "installed": kwargs.get("pv_3_installed"),
                          "maximum": kwargs.get("pv_3_max")},
             }
         })
@@ -151,6 +156,16 @@ class Building:
         self.pv.update({
             "pv_system": pv_system
         })
+
+    def precalc_pv_profiles(self):
+        """Pre-calculation of roof specific pv profiles for each roof."""
+        if self.roof_data is None:
+            e1 = "Please provide roof data for a pre-calulation of the " \
+                 "PV profiles."
+            raise ValueError(e1)
+        else:
+            # TODO : Write function for PV Profile calculation with PVlib.
+            pass
 
 
 class BuildingInvestModel(Building):
@@ -292,10 +307,10 @@ class BuildingOperationModel(Building):
     heat_supply : str
         Heat supply options are:
             - "gas-boiler"
-            - "heat-pump-air"
-            - "heat-pump-geothermal-probe"
-            - "pellets"
-            - "wood-chips"
+            - "heatpump-air"
+            - "heatpump-geothermal-probe"
+            - "pellet-boiler"
+            - "wood-chips-boiler"
     pv_1 : float
         Installed PV capacity in [kW_peak] on roof 1.
     pv_2 : float
