@@ -71,16 +71,20 @@ class Building:
     --------
     Basic usage examples of the Building with a random selection of
     attributes:
-    >>> from q100opt import buildings
-    >>> my_building = q100opt.Building(
-    ...     name="My_House"
+    >>> from q100opt.buildings import Building
+    >>> my_building = Building(
+    ...     name="My_House",
     ...     electricity_demand=pd.Series([2, 4, 5, 1, 3])
     ...     )
     """
 
-    def __init__(self, commodity_data, tech_data, weather=None, name=None,
+    def __init__(self, commodity_data=None, tech_data=None,
+                 weather=None, name=None,
                  **kwargs):
-        self.commodities = {k: v for k, v in commodity_data.items()},
+        if commodity_data is not None:
+            self.commodities = {k: v for k, v in commodity_data.items()}
+        else:
+            self.commodities = None
         self.techdata = tech_data,
         self.weather = weather,
         self.id = name
@@ -100,7 +104,7 @@ class Building:
             "hotwater": kwargs.get("hot_water_demand"),
         }
 
-        self.pv = None
+        self.pv = dict()
         self.set_pv_attributes(**kwargs)
 
         self.table_collection = {
