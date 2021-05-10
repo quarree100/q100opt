@@ -1,26 +1,45 @@
-Group,Used_in,Attribute,Datatype,Description,Status
-general,both,name,str,Name or ID of building,optional
-,both,year,int,"Year of construction, e.g. 1977",optional
-,both,levels,float,Number of floor levels,optional
-,both,apartments,int,Number of apartments,optional
-,both,ground_area,float,Ground area (German: Grundfläche des Gebäudes (GF)) in m²,optional
-,both,gross_floor_area,float,Total floor area (German: Brutto Grundfläche (BGF)) in m²,optional
-,both,net_floor_area,float,Net floor area (German: NGF) in m²,optional
-roof,both,roof_1_azimuth,float,Azimuth angle of roof 1 [°]. Azimuth definition: see pvlib,optional
-,both,roof_1_pitch,float,Roof 1 pitch angle from the horizontal [°],optional
-,both,roof_1_area_total,float,Total area of roof 1 [m²],optional
-,both,roof_1_area_usable,float,Area usable for PV installation of roof 1 [m²],optional
-,both,roof_2_azimuth,float,Azimuth angle of roof 2 [°]. Azimuth definition: see pvlib,optional
-,both,roof_2_pitch,float,Roof 2 pitch angle from the horizontal [°],optional
-,both,roof_2_area_total,float,Total area of roof 2 [m²],optional
-,both,roof_2_area_usable,float,Area usable for PV installation of roof 2 [m²],optional
-,both,roof_3_azimuth,float,Azimuth angle of roof 3 [°]. Azimuth definition: see pvlib,optional
-,both,roof_3_pitch,float,Roof 3 pitch angle from the horizontal [°],optional
-,both,roof_3_area_total,float,Total area of roof 3 [m²],optional
-,both,roof_3_area_usable,float,Area usable for PV installation of roof 3 [m²],optional
-pv,operation,pv_1_installed,float,Installed PV capacity [kW] on roof 1,optional
-,operation,pv_2_installed,float,Installed PV capacity [kW] on roof 2,optional
-,operation,pv_3_installed,float,Installed PV capacity [kW] on roof 3,optional
-,investment,pv_1_max,float,Maximum PV capacity [kW] on roof 1,optional
-,investment,pv_2_max,float,Maximum PV capacity [kW] on roof 2,optional
-,investment,pv_3_max,float,Maximum PV capacity [kW] on roof 3,optional
+Group,Used_in,Attribute,Datatype,Default,Description,Status
+general,both,name,str,,Name or ID of building,optional
+,both,year,int,,"Year of construction, e.g. 1977",optional
+,both,levels,float,,Number of floor levels,optional
+,both,apartments,int,,Number of apartments,optional
+,both,ground_area,float,,Ground area (German: Grundfläche des Gebäudes (GF)) in m²,optional
+,both,gross_floor_area,float,,Total floor area (German: Brutto Grundfläche (BGF)) in m²,optional
+,both,net_floor_area,float,,Net floor area (German: NGF) in m²,optional
+heating,both,system_configuration,str,one_temp_level,"Defines the system setting: - ""one_temp_level"": For domestic hot water and space heating the same temperature level is assumed. - ""two_temp_level"": A different temperature level for DHW can be assumed",required
+,both,temp_outside_limit,float,15,Heizgrenztemperature [°C],required
+,both,temp_heat_forward_limit,float,65,Forward temperature at temp_outside_limit [°C],required
+,both,temp_heat_forward_winter,float,75,Forward temperature at -12°C outside [°C],required
+,both,temp_heat_return,float,50,Average assumped return temperature [°C],required
+units,investment,gas_boiler.maximum,float,1000,Maximum capacity of gas boiler [kW],required
+,investment,pellet_boiler.maximum,float,100,Maximum capacity of pellet boiler [kW],required
+,investment,wood_chips_boiler.maximum,float,100,Maximum capacity of wood-chips boiler [kW],required
+,investment,heatpump_geothermal_probe.maximum,float,100,Maximum capacity of ground sourced heat pump [kW],required
+,investment,heatpump_air.maximum,float,100,Maximum capacity of air-sourced heat pump [kW],required
+,investment,thermal_storage.maximum,float,10000,Maximum capacity of thermal storage [l],required
+,investment,battery_storage.maximum,float,100,Maximum capacity of battery storage [kWh],required
+,operation,gas_boiler.installed,float,1000,Installed capacity of gas boiler [kW],required
+,operation,pellet_boiler.installed,float,0,Installed capacity of pellet boiler [kW],required
+,operation,wood_chips_boiler.installed,float,0,Installed capacity of wood-chips boiler [kW],required
+,operation,heatpump_geothermal_probe.installed,float,0,Installed capacity of ground sourced heat pump [kW],required
+,operation,heatpump_air.installed,float,0,Installed capacity of air-sourced heat pump [kW],required
+,operation,thermal_storage.installed,float,0,Installed capacity of thermal storage [l],required
+,operation,battery_storage.installed,float,0,Installed capacity of battery storage [kWh],required
+roof,both,roof_1_azimuth,float,,Azimuth angle of roof 1 [°]. Azimuth definition: see pvlib,optional
+,both,roof_1_pitch,float,,Roof 1 pitch angle from the horizontal [°],optional
+,both,roof_1_area_total,float,,Total area of roof 1 [m²],optional
+,both,roof_1_area_usable,float,,Area usable for PV installation of roof 1 [m²],optional
+,both,roof_2_azimuth,float,,Azimuth angle of roof 2 [°]. Azimuth definition: see pvlib,optional
+,both,roof_2_pitch,float,,Roof 2 pitch angle from the horizontal [°],optional
+,both,roof_2_area_total,float,,Total area of roof 2 [m²],optional
+,both,roof_2_area_usable,float,,Area usable for PV installation of roof 2 [m²],optional
+,both,roof_3_azimuth,float,,Azimuth angle of roof 3 [°]. Azimuth definition: see pvlib,optional
+,both,roof_3_pitch,float,,Roof 3 pitch angle from the horizontal [°],optional
+,both,roof_3_area_total,float,,Total area of roof 3 [m²],optional
+,both,roof_3_area_usable,float,,Area usable for PV installation of roof 3 [m²],optional
+pv,operation,pv_1_installed,float,,Installed PV capacity [kW] on roof 1,optional
+,operation,pv_2_installed,float,,Installed PV capacity [kW] on roof 2,optional
+,operation,pv_3_installed,float,,Installed PV capacity [kW] on roof 3,optional
+,investment,pv_1_max,float,,Maximum PV capacity [kW] on roof 1,optional
+,investment,pv_2_max,float,,Maximum PV capacity [kW] on roof 2,optional
+,investment,pv_3_max,float,,Maximum PV capacity [kW] on roof 3,optional
