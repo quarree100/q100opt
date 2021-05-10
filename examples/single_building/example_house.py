@@ -21,15 +21,26 @@ kataster = {
     'heat_load_hw': 4,          # heat load hot water [kW]
     'heat_load': 12,            # total heat load [kW]
     'temp_space_heating': 70,   # forward temperature space heating [°C]
-    'variable_forward_temperature': [   # [temp_AT], [temp_forward]
-        [-12, -2, 5, 12],
-        [75, 70, 65, 55]
-    ],
-    'hot_water_generation': 'electric-boiler',   # type of hot water generation
     'pv_1_max': 5,      # maximum kWp of PV area 1
     'pv_2_max': 3,      # maximum kWp of PV area 2
     'pv_3_max': 0,      # maximum kWp of PV area 2
-    'Battery_maximum': 20,  # maximum capacity of LiIon Battery
+    # maximum values of units (for investment model)
+    "gas-boiler.maximum": 100,
+    "pellet-boiler.maximum": 0,
+    "wood-chips-boiler.maximum": 0,
+    "heatpump-geothermal-probe.maximum": 0,
+    "heatpump-air.maximum": 10,
+    "thermal-storage.maximum": 100,
+    "battery-storage.maximum": 100,
+
+    # installed capacities for operation model
+    "gas-boiler.installed": 10,
+    "pellet-boiler.installed": 0,
+    "wood-chips-boiler.installed": 0,
+    "heatpump-geothermal-probe.installed": 0,
+    "heatpump-air.installed": 10,
+    "thermal-storage.installed": 0,
+    "battery-storage.installed": 0,
 }
 
 house = BuildingInvestModel(
@@ -41,6 +52,7 @@ house = BuildingInvestModel(
     commodity_data=commodity_data,
     tech_data=tech_data,
     weather=weather,
+    timesteps=8760,
     **kataster,
 )
 
@@ -51,7 +63,7 @@ house.create_table_collection()
 house.pareto_front = ParetoFront(
     table_collection=house.table_collection,
     number_of_points=5,
-    number_of_time_steps=700,
+    number_of_time_steps=8760,
 )
 
 house.pareto_front.calc_pareto_front(solver='gurobi', tee=True)

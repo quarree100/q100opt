@@ -1,8 +1,9 @@
-,Economic parameters,,Technical parameters,,,,,
-label,ep_costs,offset,efficiency,carnot_quality,temp_source,temp_cop_nominal,temp_icing,factor_icing
-gas-boiler,14.984,54.5,0.96,,,,,
-pellet-boiler,20,80,0.9,,,,,
-wood-chips-boiler,20,100,0.88,,,,,
-heatpump-air,88.806,0,,0.45,,5,3,0.75
-heatpump-geothermal-probe,30,150,,0.45,10,,,
-pv,63.916,0,,,,,,
+,Economic parameters,,,,Technical parameters,,,,,,,,
+label,ep_costs,offset,minimum,type,efficiency,efficiency_2,carnot_quality,temp_source,temp_cop_nominal_source,temp_cop_nominal_sink,temp_icing,factor_icing,max_full_load_hours
+gas-boiler,14.984,54.5,0,boiler,0.96,,,,,,,,
+micro-chp,20,150,0,chp,0.3,0.45,,,,,,,
+pellet-boiler,20,80,0,boiler,0.9,,,,,,,,
+wood-chips-boiler,20,100,0,boiler,0.88,,,,,,,,
+heatpump-air,88.806,0,0,heatpump,,,0.45,,5,60,3,0.75,
+heatpump-geothermal-probe,30,150,0,heatpump,,,0.45,10,10,60,,,2400
+pv,63.916,0,0,solar,,,,,,,,,
