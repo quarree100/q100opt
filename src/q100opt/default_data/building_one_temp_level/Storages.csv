@@ -1,0 +1,3 @@
+label,investment,bus,storage.nominal_storage_capacity,storage.loss_rate,storage.inflow_conversion_factor,storage.outflow_conversion_factor,storage.invest_relation_input_capacity,storage.invest_relation_output_capacity,invest.ep_costs,invest.maximum,invest.minimum,inflow.nominal_value,outflow.nominal_value,inflow.variable_costs
+thermal_storage,0,b_heat,,,,,,,,,,,,
+battery_storage,0,b_elec,,,,,,,,,,,,

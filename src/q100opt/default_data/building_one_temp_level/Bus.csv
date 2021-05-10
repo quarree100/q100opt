@@ -1,0 +1,5 @@
+label,active,excess,shortage,excess_costs,shortage_costs
+b_elec,1,0,0,9999,9999
+b_gas,1,0,0,9999,9999
+b_heat,1,0,0,9999,9999
+b_wood,1,0,0,9999,9999

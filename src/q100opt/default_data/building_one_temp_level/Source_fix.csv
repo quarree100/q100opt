@@ -1,0 +1,4 @@
+label,investment,to,flow.nominal_value,invest.maximum,invest.minimum
+pv_1,0,b_elec,0,0,0
+pv_2,0,b_elec,0,0,0
+pv_3,0,b_elec,0,0,0
