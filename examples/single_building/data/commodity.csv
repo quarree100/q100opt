@@ -1,4 +1,0 @@
-type,label,from,to,flow.variable_costs,flow.emission_factor
-Sink,elec_grid_sell,b_elec,,series,series
-Source,elec_grid_buy,,b_elec,series,series
-Source,gas_grid,,b_gas,0.06,0.202

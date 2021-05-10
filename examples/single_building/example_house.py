@@ -4,15 +4,16 @@ from matplotlib import pyplot as plt
 from q100opt.buildings import Building
 from q100opt.scenario_tools import ParetoFront
 import q100opt.plots as plots
+from q100opt.setup_model import load_csv_data
 
 # read data
 timeseries = pd.read_csv("data/test-building-timeseries.csv")
+
 weather = pd.read_csv("data/weather.csv")
+
 tech_data = pd.read_csv("data/techdata.csv", index_col=0, skiprows=1)
-commodity_data = {
-    'commodities': pd.read_csv("data/commodity.csv"),
-    'timeseries': pd.read_csv("data/commodity-timeseries.csv")
-}
+
+commodity_data = load_csv_data("data/commodities")
 
 # define data, that could be in the Kataster
 kataster = {
@@ -34,9 +35,9 @@ kataster = {
 house = Building(
     space_heating_demand=timeseries["E_th_RH"],
     electricity_demand=timeseries["E_el"],
-    hot_warm_demand=timeseries["E_th_TWE"],
-    pv_profile_1=timeseries["E_el_PV_1"],
-    pv_profile_2=timeseries["E_el_PV_2"],
+    hot_water_demand=timeseries["E_th_TWE"],
+    pv_1_profile=timeseries["E_el_PV_1"],
+    pv_2_profile=timeseries["E_el_PV_2"],
     commodity_data=commodity_data,
     tech_data=tech_data,
     weather=weather,

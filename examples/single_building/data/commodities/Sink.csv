@@ -1,0 +1,2 @@
+label,from,to,flow.variable_costs,flow.emission_factor
+elec_grid_sell,b_elec,,series,series
