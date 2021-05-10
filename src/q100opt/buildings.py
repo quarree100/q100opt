@@ -10,44 +10,144 @@ SPDX-License-Identifier: MIT
 
 """
 import pandas as pd
+import q100opt
 from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
+
+PV_SYSTEM = {
+    "module": "Module A",
+    "inverter": "Inverter C",
+}
 
 
 class Building:
-    """Building class"""
+    """Building base class.
 
-    def __init__(self,
-                 electricity_demand=None,
-                 space_heating_demand=None,
-                 hot_warm_demand=None,
-                 pv_profile_1=None,
-                 pv_profile_2=None,
-                 pv_profile_3=None,
-                 commodity_data=None,
-                 tech_data=None,
-                 weather=None,
-                 kataster_data=None
-                 ):
-        self.demand = {
-            "electricity": electricity_demand,
-            "heating": space_heating_demand,
-            "hotwater": hot_warm_demand
-        }
-        self.pv_potential = {
-            "pv_1": {"profile": pv_profile_1,
-                     "maximum": kataster_data["PV_1_maximum"]},
-            "pv_2": {"profile": pv_profile_2,
-                     "maximum": kataster_data["PV_2_maximum"]},
-            "pv_3": {"profile": pv_profile_3,
-                     "maximum": kataster_data["PV_3_maximum"]},
-        }
-        self.kataster_data = kataster_data,
-        self.weather = weather,
-        self.commodities = commodity_data,
+    Long description: The building base class contains basic parameters
+    of the buildings energy system that are relevant for doing investment
+    optimisations and operation optimisation.
+
+    Parameters
+    ----------
+    commodity_data : dict
+        Dictionary with commodity data for the im- and export of
+        energy carriers to the external energy system,
+        e.g. electricity import and export, gas import, biomass import.
+    tech_data : pandas.DataFrame
+        Table with cost and efficiency parameters of energy converter and
+        storage units.
+    weather : pandas.DataFrame
+        Table with weather data. The columns must be named as follows:
+            - "temperature" : Outside temperature in [°C]
+            - "ghi" : Global horizontal solar irradiation in [W/m²]
+            - "dhi" : ...
+            - "dni" : ...
+    name : str
+        ID or name of building.
+    building_group : str
+        Building group: "EFH" (single-family house), "MFH" (multi-family house)
+        or "NWG" (not residential building)
+    year : int
+        Year of construction, e.g. 1977.
+    levels: float
+        Number of floor levels.
+    apartments : int
+        Number of apartments.
+    ground_area : float
+        Ground area (German: Grundfläche des Gebäudes (GF)) in m².
+    gross_floor_area : float
+        Total floor area (German: Brutto Grundfläche (BGF)) in m².
+    net_floor_area: float
+        Net floor area (German: NGF) in m².
+
+    electricity_demand : pandas.Series
+        Sequence / Series with electricity demand values.
+    space_heating_demand : pandas.Series
+        Sequence / Series with electricity demand values.
+    hot_water_demand : pandas.Series
+        Sequence / Series with electricity demand values.
+
+
+    Examples
+    --------
+    Basic usage examples of the Building with a random selection of
+    attributes:
+    >>> from q100opt import buildings
+    >>> my_building = q100opt.Building(
+    ...     name="My_House"
+    ...     electricity_demand=pd.Series([2, 4, 5, 1, 3])
+    ...     )
+    """
+
+    def __init__(self, commodity_data, tech_data, weather=None, name=None,
+                 **kwargs):
+        self.commodities = {k: v for k, v in commodity_data.items()},
         self.techdata = tech_data,
-        self.table_collection = None
+        self.weather = weather,
+        self.id = name
+
+        # some general buildings attributes
+        self.type = kwargs.get("building_group")
+        self.year = kwargs.get("year")
+        self.levels = kwargs.get("levels")
+        self.apartments = kwargs.get("apartments")
+        self.ground_area = kwargs.get("ground_area")
+        self.gross_floor_area = kwargs.get("gross_floor_area")
+        self.net_floor_area = kwargs.get("net_floor_area")
+
+        self.demand = {
+            "electricity": kwargs.get("electricity_demand"),
+            "heating": kwargs.get("space_heating_demand"),
+            "hotwater": kwargs.get("hot_water_demand"),
+        }
+
+        self.pv = None
+        self.set_pv_attributes(**kwargs)
+
+        self.table_collection = {
+            "Bus": pd.DataFrame(columns=["label", "excess", "shortage"]),
+            "Source": pd.DataFrame(),
+            "Sink": pd.DataFrame(),
+            "Timeseries": pd.DataFrame(),
+            "Source_fix": pd.DataFrame(),
+            "Sink_fix": pd.DataFrame(),
+            "Transformer": pd.DataFrame(),
+            "Storages": pd.DataFrame(),
+        }
         self.pareto_front = None
         self.results = dict()
+
+    def set_pv_attributes(self, **kwargs):
+        """Set ups the PV attributes of the buildings."""
+        self.pv.update({
+            'potentials': {
+                "pv_1": {"profile": kwargs.get("pv_1_profile"),
+                         "maximum": kwargs.get("pv_1_max")},
+                "pv_2": {"profile": kwargs.get("pv_2_profile"),
+                         "maximum": kwargs.get("pv_2_max")},
+                "pv_3": {"profile": kwargs.get("pv_3_profile"),
+                         "maximum": kwargs.get("pv_3_max")},
+            }
+        })
+
+        pv_system = PV_SYSTEM.copy()
+        pv_system.update(kwargs)
+
+        self.pv.update({
+            "pv_system": pv_system
+        })
+
+
+class BuildingInvestModel(Building):
+    """Investment optimisation model for the energy converters and storages.
+
+    Parameters
+    ----------
+
+
+
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def create_table_collection(self):
         """..."""
@@ -57,9 +157,9 @@ class Building:
 
         # 1) Define bus table TODO : e.g. dependent on demands
         buses = pd.DataFrame(
-                ["b_gas", "b_elec", "b_heat"],
-                columns=['label']
-            )
+            ["b_gas", "b_elec", "b_heat"],
+            columns=['label']
+        )
         buses['excess'] = 0
         buses['shortage'] = 0
 
@@ -99,7 +199,7 @@ class Building:
 
         # 4) Sink_fix (demand) tables (and update of timeseries)
         demand_table = pd.DataFrame(
-                columns=['label', 'from', 'nominal_value']
+            columns=['label', 'from', 'nominal_value']
         )
 
         # TODO : not static, but dependent on given demands
@@ -159,7 +259,6 @@ class Building:
 
         tables.update({"Transformer": trafos})
 
-
         # 6) Add storage options
         # TODO
         tables.update({"Storages": pd.DataFrame(columns=['label'])})
@@ -167,6 +266,41 @@ class Building:
         self.table_collection = tables
 
         return tables
+
+
+class BuildingOperationModel(Building):
+    """Operation optimisation model for the energy converters and storages.
+
+    Given the energy converter and storage units of a buildings,
+    the demand (e.g. heat and electricity), this model
+    optimises the energy supply of the building regarding costs and emissions.
+
+    Parameters
+    ----------
+    heat_supply : str
+        Heat supply options are:
+            - "gas-boiler"
+            - "heat-pump-air"
+            - "heat-pump-geothermal-probe"
+            - "pellets"
+            - "wood-chips"
+    pv_1 : float
+        Installed PV capacity in [kW_peak] on roof 1.
+    pv_2 : float
+        Installed PV capacity in [kW_peak] on roof 2.
+    pv_3 : float
+        Installed PV capacity in [kW_peak] on roof 3.
+    solarthermal : float
+        Number of m² installed solar thermal capacity.
+    solarthermal_type : str
+        Technology of solarthermal. Options are:
+            - "flat-collector"
+            - "vaccum-tube-collector"
+    solarthermal_roof: int
+        Roof, on that solarthermal collectors are installed: 1, 2 or 3
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class District:
