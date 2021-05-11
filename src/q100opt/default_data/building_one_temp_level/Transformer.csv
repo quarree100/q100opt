@@ -1,7 +1,7 @@
-label,investment,in_1,in_2,out_1,out_2,eff_in_1,eff_in_2,eff_out_1,eff_out_2,flow.nominal_value,flow.variable_costs,flow.emission_factor,flow.summed_max,flow.max,invest.minimum,invest.maximum
-gas-boiler,0,b_gas,0,b_heat,0,1,,,,,,,,,,1000
-micro-chp,0,b_gas,0,b_elec,b_heat,1,,,,,,,,,,100
-pellet-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,,,100
-wood-chips-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,,,100
-heatpump-air,0,b_elec,0,b_heat,0,1,,,,,,,,,,100
-heatpump-geothermal-probe,0,b_elec,0,b_heat,0,1,,,,,,,,,,100
+label,investment,in_1,in_2,out_1,out_2,eff_in_1,eff_in_2,eff_out_1,eff_out_2,flow.nominal_value,flow.variable_costs,flow.max,invest.minimum,invest.maximum
+gas-boiler,0,b_gas,0,b_heat,0,1,,,,,,,,1000
+micro-chp,0,b_gas,0,b_elec,b_heat,1,,,,,,,,100
+pellet-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,100
+wood-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,100
+heatpump-air,0,b_elec,0,b_heat,0,1,,,,,,,,100
+heatpump-geo,0,b_elec,0,b_heat,0,1,,,,,,,,100

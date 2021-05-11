@@ -56,14 +56,14 @@ house = BuildingInvestModel(
     **kataster,
 )
 
-house.create_table_collection()
+table_collection = house.create_table_collection()
 
 # ab hier wäre es aufbauend auf den bestehenden Funktionen von q100opt
 
 house.pareto_front = ParetoFront(
     table_collection=house.table_collection,
     number_of_points=5,
-    number_of_time_steps=87,
+    number_of_time_steps=700,
 )
 
 house.pareto_front.calc_pareto_front(solver='gurobi', tee=True)

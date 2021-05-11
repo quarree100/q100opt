@@ -11,4 +11,4 @@ def test_no_roof_data_error():
     house = Building()
     with pytest.raises(ValueError,
                        match="Please provide roof data for a pre-calulation"):
-        house.precalc_pv_profiles()
+        house.calc_pv_profiles()

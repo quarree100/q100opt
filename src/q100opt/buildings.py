@@ -10,11 +10,14 @@ SPDX-License-Identifier: MIT
 
 """
 import os
+import math
 import pandas as pd
 import numpy as np
 
-from q100opt.setup_model import  load_csv_data
+from q100opt.setup_model import load_csv_data
 from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
+from oemof.thermal.stratified_thermal_storage import calculate_losses,\
+    calculate_storage_u_value, calculate_capacities
 
 PV_SYSTEM = {
     "module": "Module A",
@@ -142,19 +145,27 @@ class Building:
                                    pd.Series(np.zeros(8760))),
         }
 
+        if self.heating_system["system"] == "one_temp_level":
+            table_collection_template = DEFAULT_TABLE_COLLECTION_1
+        else:
+            raise ValueError(
+                "There is no other table collection than"
+                "`one_temp_level` template implemented yet."
+            )
+
         energy_converter = {}
-        for trafo in DEFAULT_TABLE_COLLECTION_1["Transformer"]["label"]:
+        for trafo in table_collection_template["Transformer"]["label"]:
             energy_converter[trafo] = {
-                'maximum': kwargs.get(trafo + ".maximum", 0),
+                'maximum': kwargs.get(trafo + ".maximum", 10),
                 'installed': kwargs.get(trafo + ".installed", 0),
             }
 
         self.energy_converter = pd.DataFrame(energy_converter).T
 
         energy_storages = {}
-        for storage in DEFAULT_TABLE_COLLECTION_1["Storages"]["label"]:
-            energy_converter[storage] = {
-                'maximum': kwargs.get(storage + ".maximum", 0),
+        for storage in table_collection_template["Storages"]["label"]:
+            energy_storages[storage] = {
+                'maximum': kwargs.get(storage + ".maximum", 100),
                 'installed': kwargs.get(storage + ".installed", 0),
             }
 
@@ -165,20 +176,7 @@ class Building:
         self.pv = dict()
         self.set_pv_attributes(**kwargs)
 
-        if self.heating_system["system"] == "one_temp_level":
-            self.table_collection = DEFAULT_TABLE_COLLECTION_1
-        else:
-            self.table_collection = {
-                "Bus": pd.DataFrame(columns=["label", "excess", "shortage"]),
-                "Source": pd.DataFrame(),
-                "Sink": pd.DataFrame(),
-                "Timeseries": pd.DataFrame(),
-                "Source_fix": pd.DataFrame(),
-                "Sink_fix": pd.DataFrame(),
-                "Transformer": pd.DataFrame(),
-                "Storages": pd.DataFrame(),
-            }
-
+        self.table_collection = table_collection_template
         self.pareto_front = None
         self.results = dict()
 
@@ -221,7 +219,7 @@ class Building:
             "pv_system": pv_system
         })
 
-    def precalc_pv_profiles(self):
+    def calc_pv_profiles(self):
         """Pre-calculation of roof specific pv profiles for each roof."""
         if self.roof_data is None:
             e1 = "Please provide roof data for a pre-calulation of the " \
@@ -296,172 +294,337 @@ class Building:
     def create_table_collection(self):
         pass
 
+    def prepare_table_collection(self):
+        """This method is an adapter for the setting up the table collection.
+
+        Here, all steps are performed that are equal for both, the investment
+        optimisation and the operation optimisation.
+        """
+        def _add_commodity_tables():
+            """
+            The tables for the external commodity sources and sinks are added
+            from the input data.
+            """
+            for k, v in self.commodities.items():
+                if k not in tables.keys():
+                    tables.update({k: v})
+                else:
+                    # this is the case for the `Timeseries`
+                    tables[k] = pd.concat([tables[k], v], axis=1)
+
+        def _add_pv_param():
+            """
+            Fills the table `Source_fix` with the PV parameters from
+            the Kataster data, and the `tech data`.
+            """
+            PVs = ["pv_1", "pv_2", "pv_3"]
+            for pv in PVs:
+                index = \
+                    tables['Source_fix'].loc[
+                        tables['Source_fix']['label'] == pv].index[0]
+
+                tables['Source_fix'].at[index, 'invest.maximum'] = \
+                    self.pv["potentials"][pv]['maximum']
+
+                tables['Source_fix'].at[index, 'flow.nominal_value'] = \
+                    self.pv["potentials"][pv]['installed']
+
+                tables['Source_fix'].at[index, 'invest.minimum'] = \
+                    self.techdata[0].loc["pv"]["minimum"]
+
+                tables['Source_fix'].at[index, 'invest.ep_costs'] = \
+                    self.techdata[0].loc["pv"]["ep_costs"]
+
+                tables['Source_fix'].at[index, 'invest.offset'] = \
+                    self.techdata[0].loc["pv"]["offset"]
+
+                tables['Timeseries'][pv + '.fix'] = \
+                    self.pv["potentials"][pv]['profile'].values
+
+        def _add_demands():
+            """Adds the demand timeseries to the table collection."""
+            for r, c in tables["Sink_fix"].iterrows():
+                tables['Timeseries'][c['label'] + '.fix'] = \
+                    self.demand[c['label']].values
+
+        def _add_transformer():
+            """Creates the Transformer table."""
+
+            trafos = tables["Transformer"]
+            trafos.set_index("label", inplace=True)
+
+            trafos["eff_out_1"] = trafos["eff_out_1"].astype(object)
+            trafos["flow.max"] = trafos["flow.max"].astype(object)
+
+            for r, c in trafos.iterrows():
+
+                trafos.at[r, "flow.nominal_value"] = \
+                    self.energy_converter.at[r, "installed"]
+
+                trafos.at[r, "invest.ep_costs"] = \
+                    self.techdata[0].loc[r]["ep_costs"]
+
+                trafos.at[r, "invest.offset"] = \
+                    self.techdata[0].loc[r]["offset"]
+
+                trafos.at[r, "invest.minimum"] = \
+                    self.techdata[0].loc[r]["minimum"]
+
+                trafos.at[r, "invest.maximum"] = \
+                    self.energy_converter.at[r, "maximum"]
+
+                if self.techdata[0].loc[r]["type"] == "boiler":
+
+                    trafos.at[r, "eff_out_1"] = \
+                        self.techdata[0].loc[r]["efficiency"]
+
+                elif self.techdata[0].loc[r]["type"] == "chp":
+
+                    trafos.at[r, "eff_out_1"] = \
+                        self.techdata[0].loc[r]["efficiency"]
+
+                    trafos.at[r, "eff_out_2"] = \
+                        self.techdata[0].loc[r]["efficiency_2"]
+
+                elif r == "heatpump-air":
+
+                    hp_data = self.techdata[0].loc[r]
+
+                    cop_series = calc_cops(
+                        mode='heat_pump',
+                        temp_high=pd.Series(
+                            self.heating_system['temp_forward']),
+                        temp_low=self.weather_data[0]['weather.temperature'],
+                        quality_grade=hp_data['carnot_quality'],
+                        factor_icing=hp_data['factor_icing'],
+                        temp_threshold_icing=hp_data['temp_icing'],
+                    )
+
+                    # nominal COP is needed for the calculation of the
+                    # maximum heat output
+                    cop_nom = calc_cops(
+                        mode='heat_pump',
+                        temp_high=[hp_data['temp_cop_nominal_sink']],
+                        temp_low=[hp_data['temp_cop_nominal_source']],
+                        quality_grade=hp_data['carnot_quality'],
+                        factor_icing=hp_data['factor_icing'],
+                        temp_threshold_icing=hp_data['temp_icing'],
+                    )
+
+                    max_series = pd.Series(calc_Q_max(
+                        cop_series, cop_nom[0], maximum_one=False,
+                        # correction_factor=1.2
+                    ))
+
+                    trafos.at[r, "eff_out_1"] = "series"
+                    tables['Timeseries'][r + '.eff_out_1'] = cop_series
+
+                    trafos.at[r, "flow.max"] = "series"
+                    tables['Timeseries'][r + '.max'] = max_series
+
+                elif r == "heatpump-geo":
+
+                    hp_data = self.techdata[0].loc[r]
+
+                    cop_nom = calc_cops(
+                        mode='heat_pump',
+                        temp_high=[hp_data['temp_cop_nominal_sink']],
+                        temp_low=[hp_data['temp_cop_nominal_source']],
+                        quality_grade=hp_data['carnot_quality'],
+                    )
+
+                    cop_series = calc_cops(
+                        mode='heat_pump',
+                        temp_high=pd.Series(
+                            self.heating_system['temp_forward']),
+                        temp_low=[hp_data['temp_source']] * 8760,
+                        quality_grade=hp_data['carnot_quality']
+                    )
+
+                    max_series = pd.Series(calc_Q_max(
+                        cop_series, cop_nom[0], maximum_one=False,
+                        # correction_factor=1.2
+                    ))
+
+                    trafos.at[r, "eff_out_1"] = "series"
+                    tables['Timeseries'][r + '.eff_out_1'] = cop_series
+
+                    trafos.at[r, "flow.max"] = "series"
+                    tables['Timeseries'][r + '.max'] = max_series
+
+                    trafos.at[r, "flow.summed_max"] = \
+                        hp_data['max_full_load_hours']
+
+                else:
+                    raise ValueError(
+                        "Transformer type {} is not know.".format(r)
+                    )
+
+            trafos.reset_index(inplace=True)
+
+            tables.update({"Transformer": trafos})
+
+        def _add_storages():
+            storages = tables["Storages"]
+            storages.set_index("label", inplace=True)
+
+            def _add_battery_storage():
+                """This method performs the pre-calculation for the battery."""
+                lab = "battery_storage"
+                if lab in storages.index:
+                    tech_data = self.techdata[0].loc[lab]
+
+                    # investment parameters
+
+                    storages.at[lab, "invest.maximum"] = \
+                        self.energy_storages.at[lab, "maximum"]
+
+                    storages.at[lab, "storage.nominal_storage_capacity"] = \
+                        self.energy_storages.at[lab, "installed"]
+
+                    storages.at[lab, "invest.minimum"] = tech_data["minimum"]
+
+                    storages.at[lab, "invest.ep_costs"] = tech_data["ep_costs"]
+
+                    storages.at[lab, "invest.offset"] = tech_data["offset"]
+
+                    # technical parameters
+
+                    storages.at[
+                        lab, "storage.invest_relation_output_capacity"] = \
+                        tech_data["c-rate"]
+
+                    storages.at[
+                        lab, "storage.invest_relation_input_capacity"] = \
+                        tech_data["c-rate"]
+
+                    storages.at[lab, "storage.loss_rate"] = \
+                        tech_data["loss-rate-1/h"]
+
+                    in_out_flow_conversion_factor = math.sqrt(
+                        tech_data["eta-storage"])
+
+                    storages.at[lab, "storage.inflow_conversion_factor"] = \
+                        in_out_flow_conversion_factor
+
+                    storages.at[lab, "storage.outflow_conversion_factor"] = \
+                        in_out_flow_conversion_factor
+
+            def _add_thermal_storage():
+                """
+                This method performs the pre-calculation of the thermal
+                storage.
+                """
+                lab = "thermal_storage"
+                tech_data = self.techdata[0].loc[lab]
+
+                # default_values
+                diameter_loss_basis = 1
+                temp_delta_default = 25
+
+                # Umrechnungsfaktor l >> kWh [kWh/l]
+                factor = calculate_capacities(
+                    volume=1, temp_h=75, temp_c=75 - temp_delta_default
+                )
+
+                u_value = \
+                    tech_data['insulation-lambda-W/mK'] / \
+                    (0.001 * tech_data['insulation-thickness-mm'])
+
+                temp_h = self.heating_system["temp_forward"]
+                temp_c = self.heating_system["temp_heat_return"]
+                temp_env = tech_data['temp_env']
+
+                temp_delta = temp_h - temp_c
+
+                max_storage_content = temp_delta / temp_delta_default
+
+                losses = calculate_losses(
+                    u_value, diameter=diameter_loss_basis, temp_h=temp_h,
+                    temp_c=temp_c, temp_env=temp_env,
+                )
+
+                loss_rate = losses[0] * max_storage_content
+                fix_relativ_losses = losses[1] * max_storage_content
+
+                # from matplotlib import pyplot as plt
+                # plt.plot(max_storage_content)
+                # # plt.plot(fix_relativ_losses)
+                # plt.show()
+
+                storages.at[lab, "invest.maximum"] = \
+                    self.energy_storages.at[lab, "maximum"] * factor
+
+                storages.at[lab, "storage.nominal_storage_capacity"] = \
+                    self.energy_storages.at[lab, "installed"] * factor
+
+                storages.at[lab, "invest.minimum"] = \
+                    tech_data["minimum"] * factor
+
+                storages.at[lab, "invest.ep_costs"] = \
+                    tech_data["ep_costs"] / factor
+
+                storages.at[lab, "invest.offset"] = \
+                    tech_data["offset"] / factor
+
+                # parameter as series
+                storages["storage.max_storage_level"] = \
+                    storages["storage.max_storage_level"].astype(object)
+                storages["storage.loss_rate"] = \
+                    storages["storage.loss_rate"].astype(object)
+                storages["storage.fixed_losses_relative"] = \
+                    storages["storage.fixed_losses_relative"].astype(object)
+
+                storages.at[lab, "storage.max_storage_level"] = "series"
+                tables['Timeseries'][
+                    lab + '.max_storage_level'] = max_storage_content
+
+                storages.at[lab, "storage.loss_rate"] = "series"
+                tables['Timeseries'][lab + '.loss_rate'] = loss_rate
+
+                storages.at[lab, "storage.fixed_losses_relative"] = "series"
+                tables['Timeseries'][lab + '.fixed_losses_relative'] = \
+                    fix_relativ_losses
+
+            _add_battery_storage()
+
+            _add_thermal_storage()
+
+            storages.reset_index(inplace=True)
+
+            tables.update({"Storages": storages})
+
+        tables = self.table_collection
+
+        _add_commodity_tables()
+        _add_pv_param()
+        _add_demands()
+        _add_transformer()
+        _add_storages()
+
+        self.table_collection = tables
+
 
 class BuildingInvestModel(Building):
     """Investment optimisation model for the energy converters and storages.
 
     Parameters
     ----------
-
-
-
+    See :class:`Building`
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def create_table_collection(self):
-        """..."""
-        tables = self.table_collection
+        """Creates the table collection for the energy system model."""
+        self.prepare_table_collection()
 
-        # 2) commodity sources and sinks
-        for k, v in self.commodities.items():
-            if k not in tables.keys():
-                tables.update({k: v})
-            else:
-                tables[k] = pd.concat([tables[k], v], axis=1)
+        # for the investment model, all investment columns are set to 1
+        for k, v in self.table_collection.items():
+            if 'investment' in v.columns:
+                v['investment'] = 1
 
-        # 3) Investment Sources (PV)
-        PVs = ["pv_1", "pv_2", "pv_3"]
-        for pv in PVs:
-            index = \
-                tables['Source_fix'].loc[
-                    tables['Source_fix']['label'] == pv].index[0]
-
-            tables['Source_fix'].at[index, 'invest.maximum'] = \
-                self.pv["potentials"][pv]['maximum']
-
-            tables['Source_fix'].at[index, 'invest.minimum'] = \
-                self.techdata[0].loc["pv"]["minimum"]
-
-            tables['Source_fix'].at[index, 'invest.ep_costs'] = \
-                self.techdata[0].loc["pv"]["ep_costs"]
-
-            tables['Source_fix'].at[index, 'invest.offset'] = \
-                self.techdata[0].loc["pv"]["offset"]
-
-            tables['Timeseries'][pv + '.fix'] = \
-                self.pv["potentials"][pv]['profile'].values
-
-        # 4) Sink_fix (demand) tables (and update of timeseries)
-        for r, c in tables["Sink_fix"].iterrows():
-            tables['Timeseries'][c['label'] + '.fix'] = \
-                self.demand[c['label']].values
-
-        # 5) Transformer table
-        trafos = tables["Transformer"]
-        trafos.set_index("label", inplace=True)
-        trafos["investment"] = 1
-
-        trafos["eff_out_1"] = trafos["eff_out_1"].astype(object)
-
-        for r, c in trafos.iterrows():
-
-            trafos.at[r, "invest.ep_costs"] = \
-                self.techdata[0].loc[r]["ep_costs"]
-
-            trafos.at[r, "invest.offset"] = \
-                self.techdata[0].loc[r]["offset"]
-
-            trafos.at[r, "invest.minimum"] = \
-                self.techdata[0].loc[r]["minimum"]
-
-            trafos.at[r, "invest.maximum"] = \
-                self.energy_converter.at[r, "maximum"]
-
-            if self.techdata[0].loc[r]["type"] == "boiler":
-
-                trafos.at[r, "eff_out_1"] = \
-                    self.techdata[0].loc[r]["efficiency"]
-
-            elif self.techdata[0].loc[r]["type"] == "chp":
-
-                trafos.at[r, "eff_out_1"] = \
-                    self.techdata[0].loc[r]["efficiency"]
-
-                trafos.at[r, "eff_out_2"] = \
-                    self.techdata[0].loc[r]["efficiency_2"]
-
-            elif r == "heatpump-air":
-
-                hp_data = self.techdata[0].loc[r]
-
-                cop_nom = calc_cops(
-                    mode='heat_pump',
-                    temp_high=[hp_data['temp_cop_nominal_sink']],
-                    temp_low=[hp_data['temp_cop_nominal_source']],
-                    quality_grade=hp_data['carnot_quality'],
-                    factor_icing=hp_data['factor_icing'],
-                    temp_threshold_icing=hp_data['temp_icing'],
-                )
-
-                cop_series = calc_cops(
-                    mode='heat_pump',
-                    temp_high=pd.Series(self.heating_system['temp_forward']),
-                    temp_low=self.weather_data[0]['weather.temperature'],
-                    quality_grade=hp_data['carnot_quality'],
-                    factor_icing=hp_data['factor_icing'],
-                    temp_threshold_icing=hp_data['temp_icing'],
-                )
-
-                max_series = pd.Series(calc_Q_max(
-                    cop_series, cop_nom[0], maximum_one=False,
-                    # correction_factor=1.2
-                ))
-
-                trafos.at[r, "eff_out_1"] = "series"
-
-                tables['Timeseries'][r + '.eff_out_1'] = cop_series
-
-                tables['Timeseries'][r + '.max'] = max_series
-
-            elif r == "heatpump-geothermal-probe":
-
-                hp_data = self.techdata[0].loc[r]
-
-                cop_nom = calc_cops(
-                    mode='heat_pump',
-                    temp_high=[hp_data['temp_cop_nominal_sink']],
-                    temp_low=[hp_data['temp_cop_nominal_source']],
-                    quality_grade=hp_data['carnot_quality'],
-                )
-
-                cop_series = calc_cops(
-                    mode='heat_pump',
-                    temp_high=pd.Series(self.heating_system['temp_forward']),
-                    temp_low=[hp_data['temp_source']] * 8760,
-                    quality_grade=hp_data['carnot_quality']
-                )
-
-                max_series = pd.Series(calc_Q_max(
-                    cop_series, cop_nom[0], maximum_one=False,
-                    # correction_factor=1.2
-                ))
-
-                trafos.at[r, "eff_out_1"] = "series"
-
-                trafos.at[r, "flow.summed_max"] = \
-                    hp_data['max_full_load_hours']
-
-                tables['Timeseries'][r + '.eff_out_1'] = cop_series
-
-                tables['Timeseries'][r + '.max'] = max_series
-
-            else:
-                raise ValueError(
-                    "Transformer type {} is not know.".format(r)
-                )
-
-        trafos.reset_index(inplace=True)
-
-        tables.update({"Transformer": trafos})
-
-        # 6) Add storage options
-        # TODO
-        tables.update({"Storages": pd.DataFrame(columns=['label'])})
-
-        self.table_collection = tables
-
-        return tables
+        return self.table_collection
 
 
 class BuildingOperationModel(Building):
@@ -473,30 +636,31 @@ class BuildingOperationModel(Building):
 
     Parameters
     ----------
-    heat_supply : str
-        Heat supply options are:
-            - "gas-boiler"
-            - "heatpump-air"
-            - "heatpump-geothermal-probe"
-            - "pellet-boiler"
-            - "wood-chips-boiler"
-    pv_1 : float
-        Installed PV capacity in [kW_peak] on roof 1.
-    pv_2 : float
-        Installed PV capacity in [kW_peak] on roof 2.
-    pv_3 : float
-        Installed PV capacity in [kW_peak] on roof 3.
-    solarthermal : float
-        Number of m² installed solar thermal capacity.
-    solarthermal_type : str
-        Technology of solarthermal. Options are:
-            - "flat-collector"
-            - "vaccum-tube-collector"
-    solarthermal_roof: int
-        Roof, on that solarthermal collectors are installed: 1, 2 or 3
+    See :class:`Building`
+
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def create_table_collection(self):
+        """Creates the table collection for the energy system model."""
+        self.prepare_table_collection()
+
+        # for the operation model, all investment columns are set to 0
+        for k, v in self.table_collection.items():
+            if 'investment' in v.columns:
+                v['investment'] = 0
+
+        # TODO : For the battery: Add Storage in- and outlfow nominal
+        #  value based on c-rate:
+        #
+        # storages.at[lab, "inflow.nominal_value"] = \
+        #     tech_data["c-rate"] * self.energy_storages.at[
+        #         lab, "installed"]
+        #
+        # storages.at[lab, "outflow.nominal_value"] = \
+        #     tech_data["c-rate"] * self.energy_storages.at[
+        #         lab, "installed"]
 
 
 class District:
@@ -509,6 +673,9 @@ def calc_Q_max(cop_series, cop_nominal, maximum_one=False,
     """
     Calculates the maximal heating capacity (relative value) of a
     heat pump.
+
+    In the end, the maximum heating power is proportional to:
+     COP(T) / COP_nominal
 
     Parameters
     ----------
