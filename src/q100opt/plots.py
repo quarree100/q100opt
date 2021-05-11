@@ -72,6 +72,8 @@ def plot_investments(results, show=True, title=None):
     ax[1].set_ylabel('Installed capacity [kWh]')
     ax[1].set_xlabel('Energy storages')
 
+    fig.autofmt_xdate(rotation=45)
+
     fig.suptitle(title)
 
     fig.tight_layout()
