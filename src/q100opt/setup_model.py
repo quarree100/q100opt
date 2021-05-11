@@ -391,7 +391,7 @@ def add_sinks_fix(tab, busd, timeseries):
     return sinks_fix
 
 
-def add_storages(tab, busd):
+def add_storages(tab, busd, timeseries=None):
     """
 
     Parameters
@@ -425,7 +425,10 @@ def add_storages(tab, busd):
 
         sto_attr = {}
         for fa in att_storage:
-            sto_attr[fa] = s['storage.' + fa]
+            if s['storage.' + fa] == "series":
+                sto_attr[fa] = timeseries[s['label'] + '.' + fa].values
+            else:
+                sto_attr[fa] = s['storage.' + fa]
 
         in_attr = {}
         for fa in att_inflow:

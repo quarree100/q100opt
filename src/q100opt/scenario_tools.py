@@ -84,7 +84,7 @@ class DistrictScenario(Scenario):
             add_sources_fix(nd['Source_fix'], busd, nd['Timeseries']) +
             add_sinks(nd['Sink'], busd, nd['Timeseries']) +
             add_sinks_fix(nd['Sink_fix'], busd, nd['Timeseries']) +
-            add_storages(nd['Storages'], busd) +
+            add_storages(nd['Storages'], busd, nd['Timeseries']) +
             add_transformer(nd['Transformer'], busd, nd['Timeseries'])
         )
 
@@ -934,6 +934,14 @@ def co2_optimisation(d_data_origin):
 
     # 2. investment costs to zero
     for _, tab in d_data.items():
+        # nonconvex investment with offset and minimum > then, the investment
+        #  can be also 0, and it is no "hard" minimum.
+        if 'invest.minimum' in tab.columns:
+            if 'invest.offset' in tab.columns:
+                for r, c in tab.iterrows():
+                    if c['invest.offset'] > 0:
+                        tab.at[r, 'invest.minimum'] = 0
+
         if 'invest.ep_costs' in tab.columns:
             tab['invest.ep_costs'] = 0.0000001
         if 'invest.offset' in tab.columns:
