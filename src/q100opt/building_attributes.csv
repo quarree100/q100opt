@@ -6,6 +6,12 @@ general,both,name,str,,Name or ID of building,optional
 ,both,ground_area,float,,Ground area (German: Grundfläche des Gebäudes (GF)) in m²,optional
 ,both,gross_floor_area,float,,Total floor area (German: Brutto Grundfläche (BGF)) in m²,optional
 ,both,net_floor_area,float,,Net floor area (German: NGF) in m²,optional
+,both,heat_load_space_heating,float,,Maximum/design heat load of space heating [kW],
+,both,heat_load_dhw,float,,Maximum/design heat load of domestic hot water [kW],
+,both,heat_load_total,float,,Total design heat load [kW],
+,both,heat_energy_space_heating,float,,Annual energy for space heating [kWh/a],
+,both,heat_energy_dhw,float,,Annual energy for domestic hot water [kWh/a],
+,both,heat_energy_total,float,,Annual energy for heating [kWh/a],
 heating,both,system_configuration,str,one_temp_level,"Defines the system setting: - ""one_temp_level"": For domestic hot water and space heating the same temperature level is assumed. - ""two_temp_level"": A different temperature level for DHW can be assumed",required
 ,both,temp_outside_limit,float,15,Heizgrenztemperature [°C],required
 ,both,temp_heat_forward_limit,float,65,Forward temperature at temp_outside_limit [°C],required

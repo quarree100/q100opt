@@ -105,7 +105,7 @@ class Building:
         self.weather_data = weather,
         self.id = name
 
-        # optimisatin settings
+        # optimisation settings
         self.num_timesteps = timesteps
 
         # some general buildings attributes
@@ -116,6 +116,10 @@ class Building:
         self.ground_area = kwargs.get("ground_area")
         self.gross_floor_area = kwargs.get("gross_floor_area")
         self.net_floor_area = kwargs.get("net_floor_area")
+
+        self.heat_load_space_heating = kwargs.get("heat_load_space_heating")
+        self.heat_load_dhw = kwargs.get("heat_load_dhw")
+        self.heat_load_total = kwargs.get("heat_load_total")
 
         self.heating_system = {
             "system": system_configuration,
@@ -242,6 +246,52 @@ class Building:
             [self.heating_system["temp_heat_forward_winter"],
              self.heating_system["temp_heat_forward_limit"]]
         )
+
+    def calc_heat_load_profile(self, method="VDI-xy"):
+        """Generates/Calculates the space heating profile.
+
+        Parameters
+        ----------
+        method : str
+            Calculation method.
+        buildings_type : str
+            Type of buildng (EFH, MFH, GHD, ...)
+        year : int
+            Year of construction
+
+        TODO : Complete method using external libraries/methods.
+        """
+        return pd.Series()
+
+    def calc_heat_dhw_profile(self, method="VDI-xy"):
+        """Generates/Calculates the domestic hot water heat profile.
+
+        Parameters
+        ----------
+        method : str
+            Calculation method.
+        buildings_type : str
+            Type of buildng (EFH, MFH, GHD, ...)
+        year : int
+            Year of construction
+        aparments : int
+            Number of household living in that buildng
+
+        TODO : Complete method using external libraries/methods.
+        """
+        return pd.Series()
+
+    def calc_electricity_profile(self, method="VDI-xy"):
+        """Generates/Calculates the electricity profile of the building.
+
+        Parameters
+        ----------
+        method : str
+            Calculation method.
+
+        TODO : Complete method using external libraries/methods.
+        """
+        return pd.Series()
 
     def create_table_collection(self):
         pass

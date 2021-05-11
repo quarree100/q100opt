@@ -63,7 +63,7 @@ house.create_table_collection()
 house.pareto_front = ParetoFront(
     table_collection=house.table_collection,
     number_of_points=5,
-    number_of_time_steps=8760,
+    number_of_time_steps=87,
 )
 
 house.pareto_front.calc_pareto_front(solver='gurobi', tee=True)
