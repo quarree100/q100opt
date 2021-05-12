@@ -78,9 +78,7 @@ setup(
         "oemof.solph >= 0.4.0",
     ],
     extras_require={
-        # eg:
-        #   'rst': ['docutils>=0.11'],
-        #   ':python_version=="2.6"': ['argparse'],
+        'oemof.thermal': ['oemof.thermal'],
     },
     entry_points={
         'console_scripts': [
