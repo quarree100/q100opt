@@ -25,6 +25,8 @@ except ImportError:
 
 from q100opt.setup_model import load_csv_data
 
+dir_name = os.path.dirname(__file__)
+
 # DEFAULT_WEATHER = pd.read_csv(
 #     os.path.join(
 #         os.path.dirname(os.path.abspath(__file__)),
@@ -38,60 +40,20 @@ DEFAULT_PV_SYSTEM = {
 }
 
 DEFAULT_TABLE_COLLECTION_1 = load_csv_data(
-    os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "default_data/building_one_temp_level"
-    )
+    os.path.join(dir_name, "default_data/building_one_temp_level")
+)
+
+KWARGS_GIS_ATTR = pd.read_csv(
+    os.path.join(dir_name, "building_attributes.csv")
 )
 
 
 class Building:
     """Building base class.
 
-    Long description: The building base class contains basic parameters
+    The building base class contains basic parameters
     of the buildings energy system that are relevant for doing investment
     optimisations and operation optimisation.
-
-    Parameters
-    ----------
-    commodity_data : dict
-        Dictionary with commodity data for the im- and export of
-        energy carriers to the external energy system,
-        e.g. electricity import and export, gas import, biomass import.
-    tech_data : pandas.DataFrame
-        Table with cost and efficiency parameters of energy converter and
-        storage units.
-    weather : pandas.DataFrame
-        Table with weather data. The columns must be named as follows:
-            - "temperature" : Outside temperature in [°C]
-            - "ghi" : Global horizontal solar irradiation in [W/m²]
-            - "dhi" : ...
-            - "dni" : ...
-    name : str
-        ID or name of building.
-    building_group : str
-        Building group: "EFH" (single-family house), "MFH" (multi-family house)
-        or "NWG" (not residential building)
-    year : int
-        Year of construction, e.g. 1977.
-    levels: float
-        Number of floor levels.
-    apartments : int
-        Number of apartments.
-    ground_area : float
-        Ground area (German: Grundfläche des Gebäudes (GF)) in m².
-    gross_floor_area : float
-        Total floor area (German: Brutto Grundfläche (BGF)) in m².
-    net_floor_area: float
-        Net floor area (German: NGF) in m².
-
-    electricity_demand : pandas.Series
-        Sequence / Series with electricity demand values.
-    space_heating_demand : pandas.Series
-        Sequence / Series with electricity demand values.
-    hot_water_demand : pandas.Series
-        Sequence / Series with electricity demand values.
-
 
     Examples
     --------
@@ -99,51 +61,104 @@ class Building:
     attributes:
     >>> from q100opt.buildings import Building
     >>> my_building = Building(
-    ...     name="My_House",
+    ...     id="My_House",
     ...     electricity_demand=pd.Series([2, 4, 5, 1, 3])
     ...     )
     """
 
-    def __init__(self, commodity_data=None, tech_data=None,
-                 weather=None, name=None, timesteps=8760,
-                 # heating system
+    def __init__(self,
+                 commodity_data=None,
+                 tech_data=None,
+                 weather=None,
+                 timesteps=8760,
                  system_configuration="one_temp_level",
-                 temp_heating_limit=15,
-                 temp_heat_forward_limit=65,
-                 temp_heat_forward_winter=75,
-                 temp_heat_return=50,
-                 **kwargs
+                 electricity_demand=None,
+                 space_heating_demand=None,
+                 hot_water_demand=None,
+                 pv_1_profile=None,
+                 pv_2_profile=None,
+                 pv_3_profile=None,
+                 **kwargs_gis
                  ):
+        """
+        Parameters
+        ----------
+        commodity_data : dict
+            Dictionary with commodity data for the im- and export of
+            energy carriers to the external energy system,
+            e.g. electricity import and export, gas import, biomass import.
+        tech_data : pandas.DataFrame
+            Table with cost and efficiency parameters of energy converter and
+            storage units.
+        weather : pandas.DataFrame
+            Table with weather data. The columns must be named as follows:
+                - "temperature" : Outside temperature in [°C]
+                - "ghi" : Global horizontal solar irradiation in [W/m²]
+                - "dhi" : ...
+                - "dni" : ...
+        timesteps : int
+            Number of timesteps of input data.
+        system_configuration : str
+            Setting of the buildings' heating system. This impacts the
+            oemof.solph model configuration. Options:
+                `one_temp_level`:
+                    Space heating and domestic hot water are
+                    assumed to have the same temperature level.
+        electricity_demand : pandas.Series
+            Sequence / Series with electricity demand values.
+        space_heating_demand : pandas.Series
+            Sequence / Series with electricity demand values.
+        hot_water_demand : pandas.Series
+            Sequence / Series with electricity demand values.
+        pv_1_profile : pandas.Series
+            Sequence with normed PV profile of roof 1.
+        pv_2_profile : pandas.Series
+            Sequence with normed PV profile of roof 2.
+        pv_3_profile : pandas.Series
+            Sequence with normed PV profile of roof 3.
+
+        kwargs_gis :
+            Additional scalar or str parameters settings. Please see
+            `q100opt.buildings_attributes.csv` for further explanation.
+        """
+
+        for key in kwargs_gis.keys():
+            if key not in list(KWARGS_GIS_ATTR['Attribute'].values):
+                ae = "Attribute `{}` is not allowed!".format(key)
+                raise AttributeError(ae)
+
         if commodity_data is not None:
             self.commodities = {k: v for k, v in commodity_data.items()}
         else:
             self.commodities = None
+
         self.techdata = tech_data,
         self.weather_data = weather,
-        self.id = name
 
-        # optimisation settings
         self.num_timesteps = timesteps
 
-        # some general buildings attributes
-        self.type = kwargs.get("building_group")
-        self.year = kwargs.get("year")
-        self.levels = kwargs.get("levels")
-        self.apartments = kwargs.get("apartments")
-        self.ground_area = kwargs.get("ground_area")
-        self.gross_floor_area = kwargs.get("gross_floor_area")
-        self.net_floor_area = kwargs.get("net_floor_area")
+        self.id = kwargs_gis.get("id")
 
-        self.heat_load_space_heating = kwargs.get("heat_load_space_heating")
-        self.heat_load_dhw = kwargs.get("heat_load_dhw")
-        self.heat_load_total = kwargs.get("heat_load_total")
+        # some general buildings attributes
+        self.type = kwargs_gis.get("building_group")
+        self.year = kwargs_gis.get("year")
+        self.levels = kwargs_gis.get("levels")
+        self.apartments = kwargs_gis.get("apartments")
+        self.ground_area = kwargs_gis.get("ground_area")
+        self.gross_floor_area = kwargs_gis.get("gross_floor_area")
+        self.net_floor_area = kwargs_gis.get("net_floor_area")
+
+        self.heat_load_space_heating = \
+            kwargs_gis.get("heat_load_space_heating")
+        self.heat_load_dhw = kwargs_gis.get("heat_load_dhw")
+        self.heat_load_total = kwargs_gis.get("heat_load_total")
 
         self.heating_system = {
             "system": system_configuration,
-            "temp_heating_limit": temp_heating_limit,
-            "temp_heat_forward_limit": temp_heat_forward_limit,
-            "temp_heat_forward_winter": temp_heat_forward_winter,
-            "temp_heat_return": temp_heat_return,
+            "temp_heating_limit": kwargs_gis.get("temp_heating_limit", 15),
+            "temp_forward_limit": kwargs_gis.get("temp_forward_limit", 60),
+            "temp_forward_winter": kwargs_gis.get("temp_forward_winter", 75),
+            "temp_return": kwargs_gis.get("temp_return", 15),
         }
 
         if self.weather_data[0] is not None:
@@ -154,13 +169,14 @@ class Building:
             self.heating_system.update({"temp_forward": None})
 
         self.demand = {
-            "electricity": kwargs.get("electricity_demand",
-                                      pd.Series(np.zeros(8760))),
-            "heating": kwargs.get("space_heating_demand",
-                                  pd.Series(np.zeros(8760))),
-            "hotwater": kwargs.get("hot_water_demand",
-                                   pd.Series(np.zeros(8760))),
+            "electricity": electricity_demand,
+            "heating": space_heating_demand,
+            "hotwater": hot_water_demand,
         }
+
+        for k, v in self.demand.items():
+            if v is None:
+                self.demand[k] = pd.Series(np.zeros(8760))
 
         if self.heating_system["system"] == "one_temp_level":
             table_collection_template = DEFAULT_TABLE_COLLECTION_1
@@ -173,8 +189,8 @@ class Building:
         energy_converter = {}
         for trafo in table_collection_template["Transformer"]["label"]:
             energy_converter[trafo] = {
-                'maximum': kwargs.get(trafo + ".maximum", 10),
-                'installed': kwargs.get(trafo + ".installed", 0),
+                'maximum': kwargs_gis.get(trafo + ".maximum", 10),
+                'installed': kwargs_gis.get(trafo + ".installed", 0),
             }
 
         self.energy_converter = pd.DataFrame(energy_converter).T
@@ -182,8 +198,8 @@ class Building:
         energy_storages = {}
         for storage in table_collection_template["Storages"]["label"]:
             energy_storages[storage] = {
-                'maximum': kwargs.get(storage + ".maximum", 100),
-                'installed': kwargs.get(storage + ".installed", 0),
+                'maximum': kwargs_gis.get(storage + ".maximum", 100),
+                'installed': kwargs_gis.get(storage + ".installed", 0),
             }
 
         self.energy_storages = pd.DataFrame(energy_storages).T
@@ -191,41 +207,72 @@ class Building:
         self.roof_data = None
 
         self.pv = dict()
-        self.set_pv_attributes(**kwargs)
+        self.set_pv_attributes(
+            pv_1_profile, pv_2_profile, pv_3_profile,
+            **kwargs_gis
+        )
 
         self.table_collection = table_collection_template
         self.pareto_front = None
         self.results = dict()
 
-    def set_pv_attributes(self, **kwargs):
-        """Set up the PV attributes of the building.
+    def set_pv_attributes(self, pv_1_profile=None, pv_2_profile=None,
+                          pv_3_profile=None, **kwargs):
+        """Method for directly adding PV systems to the building.
+
+        Parameters
+        ----------
+        pv_1_profile : pandas.Series
+            Sequence with normed PV profile of roof 1.
+        pv_2_profile : pandas.Series
+            Sequence with normed PV profile of roof 2.
+        pv_3_profile : pandas.Series
+            Sequence with normed PV profile of roof 3.
+
+        kwargs :
+            pv_1_installed : float
+                Installed capacity in [kW_peak] of roof 1.
+            pv_2_installed : float
+                Installed capacity in [kW_peak] of roof 2.
+            pv_3_installed : float
+                Installed capacity in [kW_peak] of roof 3.
+            pv_1_max : float
+                Maximum capacity in [kW_peak] of roof 1.
+            pv_2_max : float
+                Maximum capacity in [kW_peak] of roof 2.
+            pv_3_max : float
+                Maximum capacity in [kW_peak] of roof 3.
 
         Examples
         --------
-        Manually set PV System:
         >>> from q100opt.buildings import Building
         >>> my_building = Building()
         >>> my_building.set_pv_attributes(
         ...     pv_1_max=15,
-        ...     pv_1_profile=[0, 6, 34, 5, 0, 1]
+        ...     pv_1_profile=pd.Series([0, 6, 34, 5, 0, 1])
         ...     )
         >>> assert(my_building.pv["potentials"]["pv_1"]["maximum"] == 15)
+        >>> assert(sum(my_building.pv["potentials"]["pv_1"]["profile"]) == 46)
         """
+        if pv_1_profile is None:
+            pv_1_profile = pd.Series(np.zeros(self.num_timesteps))
+        if pv_2_profile is None:
+            pv_2_profile = pd.Series(np.zeros(self.num_timesteps))
+        if pv_3_profile is None:
+            pv_3_profile = pd.Series(np.zeros(self.num_timesteps))
+
         self.pv.update({
             'potentials': {
-                "pv_1": {"profile": kwargs.get(
-                    "pv_1_profile",
-                    pd.Series(np.zeros(8760))),
-                    "installed": kwargs.get("pv_1_installed", 0),
-                    "maximum": kwargs.get("pv_1_max", 0)},
-                "pv_2": {"profile": kwargs.get(
-                    "pv_2_profile", pd.Series(np.zeros(8760))),
-                    "installed": kwargs.get("pv_2_installed", 0),
-                    "maximum": kwargs.get("pv_2_max", 0)},
-                "pv_3": {"profile": kwargs.get(
-                    "pv_3_profile", pd.Series(np.zeros(8760))),
-                    "installed": kwargs.get("pv_3_installed", 0),
-                    "maximum": kwargs.get("pv_3_max", 0)},
+                "pv_1": {"profile": pv_1_profile,
+                         "installed": kwargs.get("pv_1_installed", 0),
+                         "maximum": kwargs.get("pv_1_max", 0)
+                         },
+                "pv_2": {"profile": pv_2_profile,
+                         "installed": kwargs.get("pv_2_installed", 0),
+                         "maximum": kwargs.get("pv_2_max", 0)},
+                "pv_3": {"profile": pv_3_profile,
+                         "installed": kwargs.get("pv_3_installed", 0),
+                         "maximum": kwargs.get("pv_3_max", 0)},
             }
         })
 
@@ -258,8 +305,8 @@ class Building:
         return np.interp(
             self.weather_data[0]["weather.temperature"],
             [-12, self.heating_system["temp_heating_limit"]],
-            [self.heating_system["temp_heat_forward_winter"],
-             self.heating_system["temp_heat_forward_limit"]]
+            [self.heating_system["temp_forward_winter"],
+             self.heating_system["temp_forward_limit"]]
         )
 
     def calc_heat_load_profile(self, method="VDI-xy"):
@@ -549,7 +596,7 @@ class Building:
                     (0.001 * tech_data['insulation-thickness-mm'])
 
                 temp_h = self.heating_system["temp_forward"]
-                temp_c = self.heating_system["temp_heat_return"]
+                temp_c = self.heating_system["temp_return"]
                 temp_env = tech_data['temp_env']
 
                 temp_delta = temp_h - temp_c
