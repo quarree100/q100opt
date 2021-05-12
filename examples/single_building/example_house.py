@@ -1,9 +1,9 @@
 import pandas as pd
 from matplotlib import pyplot as plt
 
+import q100opt.plots as plots
 from q100opt.buildings import BuildingInvestModel
 from q100opt.scenario_tools import ParetoFront
-import q100opt.plots as plots
 from q100opt.setup_model import load_csv_data
 
 # read data

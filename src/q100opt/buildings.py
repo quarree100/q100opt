@@ -9,17 +9,30 @@ Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 SPDX-License-Identifier: MIT
 
 """
-import os
 import math
-import pandas as pd
+import os
+
 import numpy as np
+import pandas as pd
+
+try:
+    from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
+    from oemof.thermal.stratified_thermal_storage import calculate_capacities
+    from oemof.thermal.stratified_thermal_storage import calculate_losses
+
+except ImportError:
+    print("Need to install oemof.thermal to use the buildings module.")
 
 from q100opt.setup_model import load_csv_data
-from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
-from oemof.thermal.stratified_thermal_storage import calculate_losses,\
-    calculate_storage_u_value, calculate_capacities
 
-PV_SYSTEM = {
+# DEFAULT_WEATHER = pd.read_csv(
+#     os.path.join(
+#         os.path.dirname(os.path.abspath(__file__)),
+#         "default_data/weather/TRY2015_523938130651_Jahr.csv"
+#     ), skiprows=36, delimiter=r"\s+",
+# )
+
+DEFAULT_PV_SYSTEM = {
     "module": "Module A",
     "inverter": "Inverter C",
 }
@@ -99,7 +112,8 @@ class Building:
                  temp_heat_forward_limit=65,
                  temp_heat_forward_winter=75,
                  temp_heat_return=50,
-                 **kwargs):
+                 **kwargs
+                 ):
         if commodity_data is not None:
             self.commodities = {k: v for k, v in commodity_data.items()}
         else:
@@ -132,9 +146,12 @@ class Building:
             "temp_heat_return": temp_heat_return,
         }
 
-        self.heating_system.update(
-            {"temp_forward": self.calc_temp_forward()}
-        )
+        if self.weather_data[0] is not None:
+            self.heating_system.update(
+                {"temp_forward": self.calc_temp_forward()}
+            )
+        else:
+            self.heating_system.update({"temp_forward": None})
 
         self.demand = {
             "electricity": kwargs.get("electricity_demand",
@@ -212,7 +229,7 @@ class Building:
             }
         })
 
-        pv_system = PV_SYSTEM.copy()
+        pv_system = DEFAULT_PV_SYSTEM.copy()
         # pv_system.update(kwargs)
 
         self.pv.update({
