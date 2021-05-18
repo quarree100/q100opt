@@ -274,14 +274,14 @@ class DistrictScenario(Scenario):
         logging.info("DistrictEnergySystem restored.")
 
     def analyse_results(self, heat_bus_label='b_heat',
-                        elec_bus_label='b_elec'):
+                        elec_bus_label='b_elec', label_end_energy=None):
         """Calls all analysis methods."""
         for label in [heat_bus_label, elec_bus_label]:
             check_label(self.results['main'], label)
 
         self.analyse_costs()
         self.analyse_emissions()
-        self.analyse_kpi()
+        self.analyse_kpi(label_end_energy=label_end_energy)
         self.analyse_sequences()
         self.results['sum'] = self.results['sequences'].sum()
         self.analyse_boundary_flows()
@@ -660,16 +660,35 @@ class ParetoFront(DistrictScenario):
         logging.info("DistrictEnergySystem restored.")
 
     def analyse_results(self, heat_bus_label='b_heat',
-                        elec_bus_label='b_elec'):
-        """
-        Performs the analyse_results method of the DistrictScenario class
-        for all scenarios of the pareto front.
+                        elec_bus_label='b_elec',
+                        label_end_energy=None):
+        """Performs several analysis methods of the ParetoFront class.
+
+        The processed results are stored within the attribute "results".
+
+        Parameters
+        ----------
+        heat_bus_label : str
+            Label of the (central) heat bus, the heat generation units are
+            feeding.
+        elec_bus_label : str
+            Label of the electricity bus.
+        label_end_energy : list
+            List with labels of end energy flows. For the KPI calculation
+            the absolute cost and emission values are related to the
+            delivered end-energy by specific cost and emission values.
+            As default, 'demand_heat' is used as end-energy flow.
+
         """
         for _, des in self.district_scenarios.items():
-            des.analyse_results(heat_bus_label=heat_bus_label,
-                                elec_bus_label=elec_bus_label)
+            des.analyse_results(
+                heat_bus_label=heat_bus_label, elec_bus_label=elec_bus_label,
+                label_end_energy=label_end_energy
+            )
 
-        self.results['kpi'] = self.analyse_kpi()
+        self.results['kpi'] = self.analyse_kpi(
+            label_end_energy=label_end_energy
+        )
         self.results['heat_generation'] = self.analyse_heat_generation_flows(
             heat_bus_label=heat_bus_label
         )
@@ -682,7 +701,21 @@ class ParetoFront(DistrictScenario):
     def analyse_kpi(self, label_end_energy=None):
         """
         Performs some postprocessing methods for all
-        DistrictEnergySystems.
+        DistrictEnergySystems in the `ParetoFront`.
+
+        Parameters
+        ----------
+        label_end_energy : list
+            List with labels of end energy flows. For the KPI calculation
+            the absolute cost and emission values are related to the
+            delivered end-energy by specific cost and emission values.
+            As default, 'demand_heat' is used as end-energy flow.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Table with absolute and specific cost and emission values.
+
         """
         if label_end_energy is None:
             label_end_energy = ['demand_heat']
@@ -695,7 +728,38 @@ class ParetoFront(DistrictScenario):
 
         df_kpi = pd.concat(d_kpi, axis=1)
 
+        self.results["kpi"] = df_kpi
+
         return df_kpi
+
+    def analyse_costs(self, label_end_energy=None):
+        """
+        Gives a cost summary for all
+        DistrictEnergySystems in the `ParetoFront`.
+
+        Parameters
+        ----------
+        label_end_energy : list
+            List with labels of end energy flows. For the KPI calculation
+            the absolute cost and emission values are related to the
+            delivered end-energy by specific cost and emission values.
+            As default, 'demand_heat' is used as end-energy flow.
+
+        Returns
+        -------
+        pandas.DataFrame
+            Table with absolute and specific cost and emission values.
+
+        """
+        d_costs = {}
+        for e_key, des in self.district_scenarios.items():
+            d_costs.update(
+                {e_key: des.analyse_costs()}
+            )
+
+        self.results['cost_analysis'] = d_costs
+
+        return d_costs
 
     def get_all_costs(self):
         """
