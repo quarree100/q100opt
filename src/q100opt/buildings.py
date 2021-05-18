@@ -157,7 +157,7 @@ class Building:
             "system": system_configuration,
             "temp_heating_limit": kwargs_gis.get("temp_heating_limit", 15),
             "temp_forward_limit": kwargs_gis.get("temp_forward_limit", 60),
-            "temp_forward_winter": kwargs_gis.get("temp_forward_winter", 75),
+            "temp_forward_winter": kwargs_gis.get("temp_forward_winter", 80),
             "temp_return": kwargs_gis.get("temp_return", 15),
         }
 
@@ -387,19 +387,19 @@ class Building:
                     tables['Source_fix'].loc[
                         tables['Source_fix']['label'] == pv].index[0]
 
-                tables['Source_fix'].at[index, 'invest.maximum'] = \
+                tables['Source_fix'].loc[index, 'invest.maximum'] = \
                     self.pv["potentials"][pv]['maximum']
 
-                tables['Source_fix'].at[index, 'flow.nominal_value'] = \
+                tables['Source_fix'].loc[index, 'flow.nominal_value'] = \
                     self.pv["potentials"][pv]['installed']
 
-                tables['Source_fix'].at[index, 'invest.minimum'] = \
+                tables['Source_fix'].loc[index, 'invest.minimum'] = \
                     self.techdata[0].loc["pv"]["minimum"]
 
-                tables['Source_fix'].at[index, 'invest.ep_costs'] = \
+                tables['Source_fix'].loc[index, 'invest.ep_costs'] = \
                     self.techdata[0].loc["pv"]["ep_costs"]
 
-                tables['Source_fix'].at[index, 'invest.offset'] = \
+                tables['Source_fix'].loc[index, 'invest.offset'] = \
                     self.techdata[0].loc["pv"]["offset"]
 
                 tables['Timeseries'][pv + '.fix'] = \
@@ -422,32 +422,32 @@ class Building:
 
             for r, c in trafos.iterrows():
 
-                trafos.at[r, "flow.nominal_value"] = \
+                trafos.loc[r, "flow.nominal_value"] = \
                     self.energy_converter.at[r, "installed"]
 
-                trafos.at[r, "invest.ep_costs"] = \
+                trafos.loc[r, "invest.ep_costs"] = \
                     self.techdata[0].loc[r]["ep_costs"]
 
-                trafos.at[r, "invest.offset"] = \
+                trafos.loc[r, "invest.offset"] = \
                     self.techdata[0].loc[r]["offset"]
 
-                trafos.at[r, "invest.minimum"] = \
+                trafos.loc[r, "invest.minimum"] = \
                     self.techdata[0].loc[r]["minimum"]
 
-                trafos.at[r, "invest.maximum"] = \
+                trafos.loc[r, "invest.maximum"] = \
                     self.energy_converter.at[r, "maximum"]
 
                 if self.techdata[0].loc[r]["type"] == "boiler":
 
-                    trafos.at[r, "eff_out_1"] = \
+                    trafos.loc[r, "eff_out_1"] = \
                         self.techdata[0].loc[r]["efficiency"]
 
                 elif self.techdata[0].loc[r]["type"] == "chp":
 
-                    trafos.at[r, "eff_out_1"] = \
+                    trafos.loc[r, "eff_out_1"] = \
                         self.techdata[0].loc[r]["efficiency"]
 
-                    trafos.at[r, "eff_out_2"] = \
+                    trafos.loc[r, "eff_out_2"] = \
                         self.techdata[0].loc[r]["efficiency_2"]
 
                 elif r == "heatpump-air":
@@ -480,10 +480,10 @@ class Building:
                         # correction_factor=1.2
                     ))
 
-                    trafos.at[r, "eff_out_1"] = "series"
+                    trafos.loc[r, "eff_out_1"] = "series"
                     tables['Timeseries'][r + '.eff_out_1'] = cop_series
 
-                    trafos.at[r, "flow.max"] = "series"
+                    trafos.loc[r, "flow.max"] = "series"
                     tables['Timeseries'][r + '.max'] = max_series
 
                 elif r == "heatpump-geo":
@@ -510,13 +510,13 @@ class Building:
                         # correction_factor=1.2
                     ))
 
-                    trafos.at[r, "eff_out_1"] = "series"
+                    trafos.loc[r, "eff_out_1"] = "series"
                     tables['Timeseries'][r + '.eff_out_1'] = cop_series
 
-                    trafos.at[r, "flow.max"] = "series"
+                    trafos.loc[r, "flow.max"] = "series"
                     tables['Timeseries'][r + '.max'] = max_series
 
-                    trafos.at[r, "flow.summed_max"] = \
+                    trafos.loc[r, "flow.summed_max"] = \
                         hp_data['max_full_load_hours']
 
                 else:
@@ -540,38 +540,39 @@ class Building:
 
                     # investment parameters
 
-                    storages.at[lab, "invest.maximum"] = \
+                    storages.loc[lab, "invest.maximum"] = \
                         self.energy_storages.at[lab, "maximum"]
 
-                    storages.at[lab, "storage.nominal_storage_capacity"] = \
+                    storages.loc[lab, "storage.nominal_storage_capacity"] = \
                         self.energy_storages.at[lab, "installed"]
 
-                    storages.at[lab, "invest.minimum"] = tech_data["minimum"]
+                    storages.loc[lab, "invest.minimum"] = tech_data["minimum"]
 
-                    storages.at[lab, "invest.ep_costs"] = tech_data["ep_costs"]
+                    storages.loc[lab, "invest.ep_costs"] = \
+                        tech_data["ep_costs"]
 
-                    storages.at[lab, "invest.offset"] = tech_data["offset"]
+                    storages.loc[lab, "invest.offset"] = tech_data["offset"]
 
                     # technical parameters
 
-                    storages.at[
+                    storages.loc[
                         lab, "storage.invest_relation_output_capacity"] = \
                         tech_data["c-rate"]
 
-                    storages.at[
+                    storages.loc[
                         lab, "storage.invest_relation_input_capacity"] = \
                         tech_data["c-rate"]
 
-                    storages.at[lab, "storage.loss_rate"] = \
+                    storages.loc[lab, "storage.loss_rate"] = \
                         tech_data["loss-rate-1/h"]
 
                     in_out_flow_conversion_factor = math.sqrt(
                         tech_data["eta-storage"])
 
-                    storages.at[lab, "storage.inflow_conversion_factor"] = \
+                    storages.loc[lab, "storage.inflow_conversion_factor"] = \
                         in_out_flow_conversion_factor
 
-                    storages.at[lab, "storage.outflow_conversion_factor"] = \
+                    storages.loc[lab, "storage.outflow_conversion_factor"] = \
                         in_out_flow_conversion_factor
 
             def _add_thermal_storage():
@@ -582,14 +583,12 @@ class Building:
                 lab = "thermal_storage"
                 tech_data = self.techdata[0].loc[lab]
 
-                # default_values
+                # default_values ############
+                # this values are the base for the calculation of the loss
+                # factors, and the maximum storage capacity
                 diameter_loss_basis = 1
                 temp_delta_default = 25
-
-                # Umrechnungsfaktor l >> kWh [kWh/l]
-                factor = calculate_capacities(
-                    volume=1, temp_h=75, temp_c=75 - temp_delta_default
-                )
+                # ###########################
 
                 u_value = \
                     tech_data['insulation-lambda-W/mK'] / \
@@ -611,25 +610,20 @@ class Building:
                 loss_rate = losses[0] * max_storage_content
                 fix_relativ_losses = losses[1] * max_storage_content
 
-                # from matplotlib import pyplot as plt
-                # plt.plot(max_storage_content)
-                # # plt.plot(fix_relativ_losses)
-                # plt.show()
+                storages.loc[lab, "invest.maximum"] = \
+                    self.energy_storages.at[lab, "maximum"]
 
-                storages.at[lab, "invest.maximum"] = \
-                    self.energy_storages.at[lab, "maximum"] * factor
+                storages.loc[lab, "storage.nominal_storage_capacity"] = \
+                    self.energy_storages.at[lab, "installed"]
 
-                storages.at[lab, "storage.nominal_storage_capacity"] = \
-                    self.energy_storages.at[lab, "installed"] * factor
+                storages.loc[lab, "invest.minimum"] = \
+                    tech_data["minimum"]
 
-                storages.at[lab, "invest.minimum"] = \
-                    tech_data["minimum"] * factor
+                storages.loc[lab, "invest.ep_costs"] = \
+                    tech_data["ep_costs"]
 
-                storages.at[lab, "invest.ep_costs"] = \
-                    tech_data["ep_costs"] / factor
-
-                storages.at[lab, "invest.offset"] = \
-                    tech_data["offset"] / factor
+                storages.loc[lab, "invest.offset"] = \
+                    tech_data["offset"]
 
                 # parameter as series
                 storages["storage.max_storage_level"] = \
@@ -639,14 +633,14 @@ class Building:
                 storages["storage.fixed_losses_relative"] = \
                     storages["storage.fixed_losses_relative"].astype(object)
 
-                storages.at[lab, "storage.max_storage_level"] = "series"
+                storages.loc[lab, "storage.max_storage_level"] = "series"
                 tables['Timeseries'][
                     lab + '.max_storage_level'] = max_storage_content
 
-                storages.at[lab, "storage.loss_rate"] = "series"
+                storages.loc[lab, "storage.loss_rate"] = "series"
                 tables['Timeseries'][lab + '.loss_rate'] = loss_rate
 
-                storages.at[lab, "storage.fixed_losses_relative"] = "series"
+                storages.loc[lab, "storage.fixed_losses_relative"] = "series"
                 tables['Timeseries'][lab + '.fixed_losses_relative'] = \
                     fix_relativ_losses
 

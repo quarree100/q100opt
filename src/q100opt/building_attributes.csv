@@ -13,10 +13,10 @@ general,both,id,str,,Name or ID of building,optional,Not in use so far
 ,both,heat_energy_dhw,float,,Annual energy for domestic hot water [kWh/a],,Not in use so far
 ,both,heat_energy_total,float,,Annual energy for heating [kWh/a],,Not in use so far
 heating,both,system_configuration,str,one_temp_level,"Defines the system setting: - ""one_temp_level"": For domestic hot water and space heating the same temperature level is assumed. - ""two_temp_level"": A different temperature level for DHW can be assumed",required,
-,both,temp_outside_limit,float,15,Heizgrenztemperature [°C],required,
-,both,temp_heat_forward_limit,float,65,Forward temperature at temp_outside_limit [°C],required,
-,both,temp_heat_forward_winter,float,75,Forward temperature at -12°C outside [°C],required,
-,both,temp_heat_return,float,50,Average assumped return temperature [°C],required,
+,both,temp_heating_limit,float,15,Heizgrenztemperature [°C],required,
+,both,temp_forward_limit,float,60,Forward temperature at temp_outside_limit [°C],required,
+,both,temp_forward_winter,float,80,Forward temperature at -12°C outside [°C],required,
+,both,temp_return,float,50,Average assumped return temperature [°C],required,
 units,investment,gas-boiler.maximum,float,1000,Maximum capacity of gas boiler [kW],required,
 ,investment,pellet-boiler.maximum,float,100,Maximum capacity of pellet boiler [kW],required,
 ,investment,wood-boiler.maximum,float,100,Maximum capacity of wood-chips boiler [kW],required,
