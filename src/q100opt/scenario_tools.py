@@ -24,6 +24,7 @@ import oemof.solph as solph
 import pandas as pd
 
 from .external import Scenario
+from .plots import plot_es_graph
 from .postprocessing import analyse_bus
 from .postprocessing import analyse_costs
 from .postprocessing import analyse_emissions
@@ -194,8 +195,12 @@ class DistrictScenario(Scenario):
                 self.model.integral_limit_emission_factor()
         self.results['timeindex'] = self.es.timeindex
 
-    def plot(self):
-        pass
+    def plot(self, show=True):
+        """Plots the energy system graph."""
+        if self.es is None:
+            self.table2es()
+
+        plot_es_graph(self.es, show=show)
 
     def tables_to_csv(self, path=None):
         """Dump scenario into a csv-collection."""
@@ -854,6 +859,11 @@ class ParetoFront(DistrictScenario):
         df_seq = pd.concat(d_seq.values(), axis=1, keys=d_seq.keys())
 
         return df_seq
+
+    def plot(self, show=True):
+        """Plots the energy system graph."""
+        des = next(iter(self.district_scenarios.values()))
+        des.plot(show=show)
 
 
 def load_pareto_front(path, filename):

@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from oemof import solph as solph
+from oemof.network.graph import create_nx_graph
 
 from .postprocessing import get_invest_converter
 from .postprocessing import get_invest_storages
@@ -439,3 +440,11 @@ def plot_invest_values(pf, title=None, show=True, path=None,
 
     if path:
         fig.savefig(os.path.join(path, filename))
+
+
+def plot_es_graph(esys, show=True):
+    """Plots the graph of an energy system."""
+    fig, ax = plt.subplots()
+    grph = create_nx_graph(esys)
+    pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
+    plot_graph(pos, grph, plot=show)
