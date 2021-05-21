@@ -437,7 +437,8 @@ class Building:
                 trafos.loc[r, "invest.maximum"] = \
                     self.energy_converter.at[r, "maximum"]
 
-                if self.techdata[0].loc[r]["type"] == "boiler":
+                if (self.techdata[0].loc[r]["type"] == "boiler") or (
+                        self.techdata[0].loc[r]["type"] == "substation"):
 
                     trafos.loc[r, "eff_out_1"] = \
                         self.techdata[0].loc[r]["efficiency"]
@@ -518,6 +519,10 @@ class Building:
 
                     trafos.loc[r, "flow.summed_max"] = \
                         hp_data['max_full_load_hours']
+
+                elif r == "substation":
+
+                    trafos.loc[r, "eff_out_1"] = 1
 
                 else:
                     raise ValueError(

@@ -32,6 +32,7 @@ kataster = {
     "heatpump-air.maximum": 10,
     "thermal-storage.maximum": 100,
     "battery-storage.maximum": 100,
+    "substation.maximum": 100,
 
     # installed capacities for operation model
     "gas-boiler.installed": 10,

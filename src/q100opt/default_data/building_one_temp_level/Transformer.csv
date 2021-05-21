@@ -5,3 +5,4 @@ pellet-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,100
 wood-boiler,0,b_wood,0,b_heat,0,1,,,,,,,,100
 heatpump-air,0,b_elec,0,b_heat,0,1,,,,,,,,100
 heatpump-geo,0,b_elec,0,b_heat,0,1,,,,,,,,100
+substation,0,b_elec,0,b_heat,0,1,,,,,,,,100

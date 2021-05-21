@@ -22,6 +22,7 @@ units,investment,gas-boiler.maximum,float,1000,Maximum capacity of gas boiler [k
 ,investment,wood-boiler.maximum,float,100,Maximum capacity of wood-chips boiler [kW],required,
 ,investment,heatpump-geo.maximum,float,100,Maximum capacity of ground sourced heat pump [kW],required,
 ,investment,heatpump-air.maximum,float,100,Maximum capacity of air-sourced heat pump [kW],required,
+,investment,substation.maximum,float,100,Maximum capacity of district heating substation [kW],required,
 ,investment,thermal-storage.maximum,float,2000,Maximum capacity of thermal storage [liter],required,
 ,investment,battery-storage.maximum,float,100,Maximum capacity of battery storage [kWh],required,
 ,operation,gas-boiler.installed,float,1000,Installed capacity of gas boiler [kW],required,
