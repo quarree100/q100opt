@@ -539,7 +539,7 @@ class Building:
 
             def _add_battery_storage():
                 """This method performs the pre-calculation for the battery."""
-                lab = "battery_storage"
+                lab = "battery-storage"
                 if lab in storages.index:
                     tech_data = self.techdata[0].loc[lab]
 
@@ -585,7 +585,7 @@ class Building:
                 This method performs the pre-calculation of the thermal
                 storage.
                 """
-                lab = "thermal_storage"
+                lab = "thermal-storage"
                 tech_data = self.techdata[0].loc[lab]
 
                 # default_values ############
@@ -686,6 +686,11 @@ class BuildingInvestModel(Building):
         for k, v in self.table_collection.items():
             if 'investment' in v.columns:
                 v['investment'] = 1
+
+        for x in ['Storages', 'Transformer']:
+            for r, c in self.table_collection[x].iterrows():
+                if c['invest.maximum'] == 0:
+                    self.table_collection[x].loc[r, 'active'] = 0
 
         return self.table_collection
 

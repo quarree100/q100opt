@@ -18,6 +18,7 @@ heating,both,system_configuration,str,one_temp_level,"Defines the system setting
 ,both,temp_forward_winter,float,80,Forward temperature at -12°C outside [°C],required,
 ,both,temp_return,float,50,Average assumped return temperature [°C],required,
 units,investment,gas-boiler.maximum,float,1000,Maximum capacity of gas boiler [kW],required,
+,investment,micro-chp.maximum,float,100,Maximum capacity of CHP [kW],required,
 ,investment,pellet-boiler.maximum,float,100,Maximum capacity of pellet boiler [kW],required,
 ,investment,wood-boiler.maximum,float,100,Maximum capacity of wood-chips boiler [kW],required,
 ,investment,heatpump-geo.maximum,float,100,Maximum capacity of ground sourced heat pump [kW],required,
