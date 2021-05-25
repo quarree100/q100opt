@@ -591,8 +591,8 @@ class Building:
                 # default_values ############
                 # this values are the base for the calculation of the loss
                 # factors, and the maximum storage capacity
-                diameter_loss_basis = 1
-                temp_delta_default = 25
+                diameter_loss_basis = tech_data['diameter-m']
+                temp_delta_default = tech_data['delta_T_default-K']
                 # ###########################
 
                 u_value = \
