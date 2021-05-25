@@ -439,7 +439,9 @@ def get_all_sequences(results):
             df_mi['from'] = [x.label for x in df_mi['from']]
             df_mi['to'] = [x.label for x in df_mi['to']]
             df_mi['type'] = typ
-            df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
+            df.columns = pd.MultiIndex.from_frame(
+                df_mi[['type', 'from', 'to']]
+            )
 
             l_df.append(df)
 

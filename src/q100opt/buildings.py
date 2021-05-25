@@ -17,7 +17,6 @@ import pandas as pd
 
 try:
     from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
-    from oemof.thermal.stratified_thermal_storage import calculate_capacities
     from oemof.thermal.stratified_thermal_storage import calculate_losses
 
 except ImportError:
