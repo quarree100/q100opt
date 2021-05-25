@@ -451,8 +451,8 @@ def plot_es_graph(esys, show=True):
 
 
 def plot_pareto_fronts(data_dict, show_plot=True, filename=None, title=None,
-                       y_label='Total costs [€]',
-                       x_label='Total emissions [kg]',
+                       y_label='Total costs [€/a]',
+                       x_label='Total emissions [kg/a]',
                        ):
     """Plots the pareto front of a dictionary.
 
