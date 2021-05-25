@@ -454,7 +454,7 @@ def plot_pareto_fronts(data_dict, show_plot=True, filename=None, title=None,
                        y_label='Total costs [€/a]',
                        x_label='Total emissions [kg/a]',
                        ):
-    """Plots the pareto front of a dictionary.
+    """Plots multiple pareto fronts from a dictionary.
 
     Parameters
     ----------
