@@ -691,6 +691,8 @@ class ParetoFront(DistrictScenario):
                 label_end_energy=label_end_energy
             )
 
+        self.analyse_costs(label_end_energy=label_end_energy)
+
         self.results['kpi'] = self.analyse_kpi(
             label_end_energy=label_end_energy
         )
