@@ -448,3 +448,64 @@ def plot_es_graph(esys, show=True):
     grph = create_nx_graph(esys)
     pos = nx.drawing.nx_agraph.graphviz_layout(grph, prog='neato')
     plot_graph(pos, grph, plot=show)
+
+
+def plot_pareto_fronts(data_dict, show_plot=True, filename=None, title=None,
+                       y_label='Total costs [€]',
+                       x_label='Total emissions [kg]',
+                       ):
+    """Plots the pareto front of a dictionary.
+
+    Parameters
+    ----------
+    data_dict : dict
+        Dictionary with `ParetoFront` as values. Keys will be used as scenario
+        names for the legend.
+    show_plot : bool
+        Indicates if plot should be shown.
+    filename : str
+        If given, figure is saved with under this filename.
+    title : str
+        Optional: title of plot.
+    x_label : str
+    y_label :str
+
+    Returns
+    -------
+    Creates a figure with multiple pareto fronts.
+    """
+    scenarios = list(data_dict.keys())
+
+    fig, ax = plt.subplots()
+
+    for sc in scenarios:
+        pf = data_dict[sc]
+        pf.results["pareto_front"].plot(
+            ax=ax, marker='X', markersize=6, ls='--', lw=0.5,
+            x='emissions', y='costs', label=sc,
+        )
+
+        # add text to each point
+        x_offset = (pf.e_max - pf.e_min) * 0.01
+        for r, c in pf.results['pareto_front'].iterrows():
+            ax.text(
+                c['emissions'] + x_offset, c['costs'], str(r)
+            )
+
+    plt.grid()
+
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+
+    plt.legend()
+
+    if title is not None:
+        plt.title(title)
+
+    plt.tight_layout()
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
