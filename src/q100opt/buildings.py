@@ -605,14 +605,32 @@ class Building:
 
                 temp_delta = temp_h - temp_c
 
+                # the resulting storage capacity is the temperature delta at
+                # each timestep (of the heating system), divided by the
+                # default temperature delta, the costs are related to:
                 max_storage_content = temp_delta / temp_delta_default
 
+                # the loss factors are calculated via oemof.thermal
+                # here, for a cylindrical storage, a diameter must be given.
+                # then, the loss factors linearly depend on the height of the
+                # storage.
                 losses = calculate_losses(
                     u_value, diameter=diameter_loss_basis, temp_h=temp_h,
                     temp_c=temp_c, temp_env=temp_env,
                 )
 
+                # since the delta T of the storage changes in each timestep,
+                # the relative loss factor also changes over time.
+                # (if a constant delta T is assumed, the loss factor would be
+                # constant, independent of the storage size (die Höhe des
+                # Speichers kürz sich raus - siehe oemof.thermal Doku)
                 loss_rate = losses[0] * max_storage_content
+
+                # on the other side, the fixed part of the losses (caused by
+                # temperature difference of the de-charged storage (return
+                # temperature) and the surrounding)), becomes a constant factor
+                # again after the multiplication with the maximum storage
+                # content.
                 fix_relativ_losses = losses[1] * max_storage_content
 
                 storages.loc[lab, "invest.maximum"] = \
