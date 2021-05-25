@@ -432,15 +432,16 @@ def get_all_sequences(results):
             if isinstance(k[0], solph_class) or isinstance(k[1], solph_class)
         }
 
-        df = views.convert_to_multiindex(group)
-        df_mi = df.columns.to_frame()
-        df_mi.reset_index(drop=True, inplace=True)
-        df_mi['from'] = [x.label for x in df_mi['from']]
-        df_mi['to'] = [x.label for x in df_mi['to']]
-        df_mi['type'] = typ
-        df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
+        if bool(group):
+            df = views.convert_to_multiindex(group)
+            df_mi = df.columns.to_frame()
+            df_mi.reset_index(drop=True, inplace=True)
+            df_mi['from'] = [x.label for x in df_mi['from']]
+            df_mi['to'] = [x.label for x in df_mi['to']]
+            df_mi['type'] = typ
+            df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
 
-        l_df.append(df)
+            l_df.append(df)
 
     df_results = pd.concat(l_df, axis=1)
 
@@ -452,13 +453,15 @@ def get_all_sequences(results):
         if isinstance(k[0], solph.GenericStorage) or isinstance(
             k[1], solph.GenericStorage)
     }
-    df = views.convert_to_multiindex(group)
-    df_mi = df.columns.to_frame()
-    df_mi.reset_index(drop=True, inplace=True)
-    df_mi['from'] = [x.label for x in df_mi['from']]
-    df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
 
-    df_results = pd.concat([df_results, df], axis=1)
+    if bool(group):
+        df = views.convert_to_multiindex(group)
+        df_mi = df.columns.to_frame()
+        df_mi.reset_index(drop=True, inplace=True)
+        df_mi['from'] = [x.label for x in df_mi['from']]
+        df.columns = pd.MultiIndex.from_frame(df_mi[['type', 'from', 'to']])
+
+        df_results = pd.concat([df_results, df], axis=1)
 
     return df_results
 
