@@ -199,7 +199,8 @@ class Building:
             )
 
         energy_converter = {}
-        for trafo in table_collection_template["Transformer"]["label"]:
+        for trafo in list(table_collection_template[
+                              "Transformer"]["label"].values):
             energy_converter[trafo] = {
                 'maximum': kwargs_gis.get(trafo + ".maximum", 10),
                 'installed': kwargs_gis.get(trafo + ".installed", 0),
@@ -208,7 +209,8 @@ class Building:
         self.energy_converter = pd.DataFrame(energy_converter).T
 
         energy_storages = {}
-        for storage in table_collection_template["Storages"]["label"]:
+        for storage in list(table_collection_template[
+                                "Storages"]["label"].values):
             energy_storages[storage] = {
                 'maximum': kwargs_gis.get(storage + ".maximum", 100),
                 'installed': kwargs_gis.get(storage + ".installed", 0),
@@ -790,7 +792,7 @@ def _add_thermal_storage(storages, tech_data, maximum, installed, timeseries,
 
     storages.loc[lab, "invest.offset"] = tech_data["offset"]
 
-    # parameter as series
+    # parameter as series # TODO : really needed?
     storages["storage.max_storage_level"] = \
         storages["storage.max_storage_level"].astype(object)
     storages["storage.loss_rate"] = \
