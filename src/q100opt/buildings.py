@@ -199,8 +199,8 @@ class Building:
             )
 
         energy_converter = {}
-        for trafo in list(table_collection_template[
-                              "Transformer"]["label"].values):
+        for trafo in table_collection_template[
+            "Transformer"]["label"].copy().tolist():
             energy_converter[trafo] = {
                 'maximum': kwargs_gis.get(trafo + ".maximum", 10),
                 'installed': kwargs_gis.get(trafo + ".installed", 0),
@@ -209,8 +209,8 @@ class Building:
         self.energy_converter = pd.DataFrame(energy_converter).T
 
         energy_storages = {}
-        for storage in list(table_collection_template[
-                                "Storages"]["label"].values):
+        for storage in table_collection_template[
+            "Storages"]["label"].copy().tolist():
             energy_storages[storage] = {
                 'maximum': kwargs_gis.get(storage + ".maximum", 100),
                 'installed': kwargs_gis.get(storage + ".installed", 0),

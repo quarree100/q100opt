@@ -47,6 +47,10 @@ def test_add_battery():
     ))
 
 
+def test_building_invest():
+    BuildingInvestModel()
+
+
 def test_default_house():
     house = BuildingInvestModel()
     tc = house.create_table_collection()
