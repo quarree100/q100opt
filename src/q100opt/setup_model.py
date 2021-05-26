@@ -23,6 +23,16 @@ def load_csv_data(path):
     The keys of the dictionary are the names of the csv files
     (without .csv).
 
+    Notes
+    -----
+      It is allowed and intended that columns can have mixed dtypes
+      (I know, probably bad style. Maybe, we will find some better solution
+      in future.) A column can contain the string `series` together with
+      numeric parameters. This tells the model builder, that for this certain
+      value (e.g. a conversion factor), should look at the timeseries table
+      for a sequence. Other strings than `series` are not allowed in mixed
+      dtype columns.
+
     Parameters
     ----------
     path : str
@@ -39,9 +49,38 @@ def load_csv_data(path):
 
         val = pd.read_csv(os.path.join(path, name))
 
+        for col, series in val.items():
+            if "series" in list(series.values):
+                for index, value in series.iteritems():
+                    if value != "series":
+                        try:
+                            val.loc[index, col] = pd.to_numeric(value)
+                        except ValueError:
+                            ve = "Found: {}. No other string than " \
+                                 "`series` allowed in the " \
+                                 "tables!".format(value)
+                            raise ValueError(ve)
+
         dct.update([(key, val)])
 
     return dct
+
+
+def store_csv_tables(dct, path=""):
+    """
+
+    Parameters
+    ----------
+    dct
+    path
+
+    Returns
+    -------
+
+    """
+    for k, v in dct.items():
+        name = k + ".csv"
+        v.to_csv(os.path.join(path, name))
 
 
 def load_xlsx_data(filename):
