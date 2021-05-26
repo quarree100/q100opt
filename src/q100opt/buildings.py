@@ -141,7 +141,7 @@ class Building:
         else:
             self.techdata = DEFAUL_TECH_DATA
 
-        self.weather_data = weather,
+        self.weather_data = weather
 
         self.num_timesteps = timesteps
 
@@ -169,7 +169,7 @@ class Building:
             "temp_return": kwargs_gis.get("temp_return", 40),
         }
 
-        if self.weather_data[0] is not None:
+        if self.weather_data is not None:
             self.heating_system.update(
                 {"temp_forward": self.calc_temp_forward()}
             )
@@ -311,7 +311,7 @@ class Building:
         and -12 °C the values are linear interpolated.
         """
         return np.interp(
-            self.weather_data[0]["weather.temperature"],
+            self.weather_data["weather.temperature"],
             [-12, self.heating_system["temp_heating_limit"]],
             [self.heating_system["temp_forward_winter"],
              self.heating_system["temp_forward_limit"]]
@@ -402,13 +402,13 @@ class Building:
                     self.pv["potentials"][pv]['installed']
 
                 tables['Source_fix'].loc[index, 'invest.minimum'] = \
-                    self.techdata[0].loc["pv"]["minimum"]
+                    self.techdata.loc["pv"]["minimum"]
 
                 tables['Source_fix'].loc[index, 'invest.ep_costs'] = \
-                    self.techdata[0].loc["pv"]["ep_costs"]
+                    self.techdata.loc["pv"]["ep_costs"]
 
                 tables['Source_fix'].loc[index, 'invest.offset'] = \
-                    self.techdata[0].loc["pv"]["offset"]
+                    self.techdata.loc["pv"]["offset"]
 
                 tables['Timeseries'][pv + '.fix'] = \
                     self.pv["potentials"][pv]['profile'].values
@@ -434,40 +434,40 @@ class Building:
                     self.energy_converter.at[r, "installed"]
 
                 trafos.loc[r, "invest.ep_costs"] = \
-                    self.techdata[0].loc[r]["ep_costs"]
+                    self.techdata.loc[r]["ep_costs"]
 
                 trafos.loc[r, "invest.offset"] = \
-                    self.techdata[0].loc[r]["offset"]
+                    self.techdata.loc[r]["offset"]
 
                 trafos.loc[r, "invest.minimum"] = \
-                    self.techdata[0].loc[r]["minimum"]
+                    self.techdata.loc[r]["minimum"]
 
                 trafos.loc[r, "invest.maximum"] = \
                     self.energy_converter.at[r, "maximum"]
 
-                if (self.techdata[0].loc[r]["type"] == "boiler") or (
-                        self.techdata[0].loc[r]["type"] == "substation"):
+                if (self.techdata.loc[r]["type"] == "boiler") or (
+                        self.techdata.loc[r]["type"] == "substation"):
 
                     trafos.loc[r, "eff_out_1"] = \
-                        self.techdata[0].loc[r]["efficiency"]
+                        self.techdata.loc[r]["efficiency"]
 
-                elif self.techdata[0].loc[r]["type"] == "chp":
+                elif self.techdata.loc[r]["type"] == "chp":
 
                     trafos.loc[r, "eff_out_1"] = \
-                        self.techdata[0].loc[r]["efficiency"]
+                        self.techdata.loc[r]["efficiency"]
 
                     trafos.loc[r, "eff_out_2"] = \
-                        self.techdata[0].loc[r]["efficiency_2"]
+                        self.techdata.loc[r]["efficiency_2"]
 
                 elif r == "heatpump-air":
 
-                    hp_data = self.techdata[0].loc[r]
+                    hp_data = self.techdata.loc[r]
 
                     cop_series = calc_cops(
                         mode='heat_pump',
                         temp_high=pd.Series(
                             self.heating_system['temp_forward']),
-                        temp_low=self.weather_data[0]['weather.temperature'],
+                        temp_low=self.weather_data['weather.temperature'],
                         quality_grade=hp_data['carnot_quality'],
                         factor_icing=hp_data['factor_icing'],
                         temp_threshold_icing=hp_data['temp_icing'],
@@ -497,7 +497,7 @@ class Building:
 
                 elif r == "heatpump-geo":
 
-                    hp_data = self.techdata[0].loc[r]
+                    hp_data = self.techdata.loc[r]
 
                     cop_nom = calc_cops(
                         mode='heat_pump',
@@ -547,7 +547,7 @@ class Building:
             storages.set_index("label", inplace=True)
 
             # add battery storage
-            tech_data = self.techdata[0].loc["battery-storage"]
+            tech_data = self.techdata.loc["battery-storage"]
             storages = _add_battery_storage(
                 storages, tech_data,
                 self.energy_storages.at["battery-storage", "maximum"],
@@ -556,7 +556,7 @@ class Building:
 
             # add thermal storage
             lab = "thermal-storage"
-            tech_data_ts = self.techdata[0].loc[lab]
+            tech_data_ts = self.techdata.loc[lab]
             storages, timeseries = _add_thermal_storage(
                 storages, tech_data_ts,
                 maximum=self.energy_storages.at[lab, "maximum"],
