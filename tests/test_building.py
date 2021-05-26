@@ -24,7 +24,7 @@ def test_no_roof_data_error():
 
 
 def test_add_battery():
-    storages = DEFAULT_TABLE_COLLECTION_1['Storages']
+    storages = DEFAULT_TABLE_COLLECTION_1['Storages'].copy()
     storages.set_index("label", inplace=True)
     tech_data = pd.Series(
         [1, 3, 4, 0.5, 0.81, 0.0001],
