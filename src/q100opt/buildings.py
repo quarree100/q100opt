@@ -157,7 +157,7 @@ class Building:
             "temp_heating_limit": kwargs_gis.get("temp_heating_limit", 15),
             "temp_forward_limit": kwargs_gis.get("temp_forward_limit", 60),
             "temp_forward_winter": kwargs_gis.get("temp_forward_winter", 80),
-            "temp_return": kwargs_gis.get("temp_return", 15),
+            "temp_return": kwargs_gis.get("temp_return", 40),
         }
 
         if self.weather_data[0] is not None:
@@ -533,105 +533,32 @@ class Building:
             tables.update({"Transformer": trafos})
 
         def _add_storages():
+            """Pre-calculates and adds the parameter of the storages."""
             storages = tables["Storages"]
             storages.set_index("label", inplace=True)
 
-            def _add_thermal_storage():
-                """
-                This method performs the pre-calculation of the thermal
-                storage.
-                """
-                lab = "thermal-storage"
-                tech_data = self.techdata[0].loc[lab]
-
-                # default_values ############
-                # this values are the base for the calculation of the loss
-                # factors, and the maximum storage capacity
-                diameter_loss_basis = tech_data['diameter-m']
-                temp_delta_default = tech_data['delta_T_default-K']
-                # ###########################
-
-                u_value = \
-                    tech_data['insulation-lambda-W/mK'] / \
-                    (0.001 * tech_data['insulation-thickness-mm'])
-
-                temp_h = self.heating_system["temp_forward"]
-                temp_c = self.heating_system["temp_return"]
-                temp_env = tech_data['temp_env']
-
-                temp_delta = temp_h - temp_c
-
-                # the resulting storage capacity is the temperature delta at
-                # each timestep (of the heating system), divided by the
-                # default temperature delta, the costs are related to:
-                max_storage_content = temp_delta / temp_delta_default
-
-                # the loss factors are calculated via oemof.thermal
-                # here, for a cylindrical storage, a diameter must be given.
-                # then, the loss factors linearly depend on the height of the
-                # storage.
-                losses = calculate_losses(
-                    u_value, diameter=diameter_loss_basis, temp_h=temp_h,
-                    temp_c=temp_c, temp_env=temp_env,
-                )
-
-                # since the delta T of the storage changes in each timestep,
-                # the relative loss factor also changes over time.
-                # (if a constant delta T is assumed, the loss factor would be
-                # constant, independent of the storage size (die Höhe des
-                # Speichers kürz sich raus - siehe oemof.thermal Doku)
-                loss_rate = losses[0] * max_storage_content
-
-                # on the other side, the fixed part of the losses (caused by
-                # temperature difference of the de-charged storage (return
-                # temperature) and the surrounding)), becomes a constant factor
-                # again after the multiplication with the maximum storage
-                # content.
-                fix_relativ_losses = losses[1] * max_storage_content
-
-                storages.loc[lab, "invest.maximum"] = \
-                    self.energy_storages.at[lab, "maximum"]
-
-                storages.loc[lab, "storage.nominal_storage_capacity"] = \
-                    self.energy_storages.at[lab, "installed"]
-
-                storages.loc[lab, "invest.minimum"] = \
-                    tech_data["minimum"]
-
-                storages.loc[lab, "invest.ep_costs"] = \
-                    tech_data["ep_costs"]
-
-                storages.loc[lab, "invest.offset"] = \
-                    tech_data["offset"]
-
-                # parameter as series
-                storages["storage.max_storage_level"] = \
-                    storages["storage.max_storage_level"].astype(object)
-                storages["storage.loss_rate"] = \
-                    storages["storage.loss_rate"].astype(object)
-                storages["storage.fixed_losses_relative"] = \
-                    storages["storage.fixed_losses_relative"].astype(object)
-
-                storages.loc[lab, "storage.max_storage_level"] = "series"
-                tables['Timeseries'][
-                    lab + '.max_storage_level'] = max_storage_content
-
-                storages.loc[lab, "storage.loss_rate"] = "series"
-                tables['Timeseries'][lab + '.loss_rate'] = loss_rate
-
-                storages.loc[lab, "storage.fixed_losses_relative"] = "series"
-                tables['Timeseries'][lab + '.fixed_losses_relative'] = \
-                    fix_relativ_losses
-
+            # add battery storage
             tech_data = self.techdata[0].loc["battery-storage"]
-
             storages = _add_battery_storage(
                 storages, tech_data,
                 self.energy_storages.at["battery-storage", "maximum"],
                 self.energy_storages.at["battery-storage", "installed"],
             )
 
-            _add_thermal_storage()
+            # add thermal storage
+            lab = "thermal-storage"
+            tech_data_ts = self.techdata[0].loc[lab]
+            storages, timeseries = _add_thermal_storage(
+                storages, tech_data_ts,
+                maximum=self.energy_storages.at[lab, "maximum"],
+                installed=self.energy_storages.at[lab, "installed"],
+                timeseries=tables['Timeseries'],
+                temp_forward=self.heating_system["temp_forward"],
+                temp_return=self.heating_system["temp_return"],
+                lab=lab
+            )
+
+            tables['Timeseries'] = timeseries
 
             storages.reset_index(inplace=True)
 
@@ -760,6 +687,116 @@ def _add_battery_storage(storages, tech_data, maximum, installed,
         in_out_flow_conversion_factor
 
     return storages
+
+
+def _add_thermal_storage(storages, tech_data, maximum, installed, timeseries,
+                         temp_forward, temp_return, lab="thermal-storage"):
+    """
+    This function pre-calculates the parameter of the thermal storages
+    and adds it to the sheet "Storages" of the table collection.
+
+    Parameters
+    ----------
+    storages : pandas.DataFrame
+        Sheet `Storages` of the table collection.
+    tech_data : pandas.Series
+        Economical and technical parameters of the thermal storage.
+    maximum : float
+        Maximum thermal capacity of the storage in [kWh].
+    installed : float
+        Installed thermal capacity of the storage in [kWh].
+    timeseries : pandas.DataFrame
+        `Timeseries` sheet of the table-collection. Time-dependent parameters
+        will be added there.
+    temp_forward : float or array
+        Forward temperature of the heating system.
+    temp_return : float
+        Return temperature of the heating system.
+    lab : str
+        Label of the storage.
+
+    Returns
+    -------
+    storages : pandas.DataFrame
+        Updated `Storages` sheet of the table collection
+    timeseries : pandas.DataFrame
+        Updated `Timeseries` sheet of the table collection
+    """
+    # default_values ############
+    # this values are the base for the calculation of the loss
+    # factors, and the maximum storage capacity
+    diameter_loss_basis = tech_data['diameter-m']
+    temp_delta_default = tech_data['delta_T_default-K']
+    # ###########################
+
+    u_value = \
+        tech_data['insulation-lambda-W/mK'] / \
+        (0.001 * tech_data['insulation-thickness-mm'])
+
+    temp_h = temp_forward
+    temp_c = temp_return
+    temp_env = tech_data['temp_env']
+
+    temp_delta = temp_h - temp_c
+
+    # the resulting storage capacity is the temperature delta at
+    # each timestep (of the heating system), divided by the
+    # default temperature delta, the costs are related to:
+    max_storage_content = temp_delta / temp_delta_default
+
+    # the loss factors are calculated via oemof.thermal
+    # here, for a cylindrical storage, a diameter must be given.
+    # then, the loss factors linearly depend on the height of the
+    # storage.
+    losses = calculate_losses(
+        u_value, diameter=diameter_loss_basis, temp_h=temp_h,
+        temp_c=temp_c, temp_env=temp_env,
+    )
+
+    # since the delta T of the storage changes in each timestep,
+    # the relative loss factor also changes over time.
+    # (if a constant delta T is assumed, the loss factor would be
+    # constant, independent of the storage size (die Höhe des
+    # Speichers kürz sich raus - siehe oemof.thermal Doku)
+    loss_rate = losses[0] * max_storage_content
+
+    # on the other side, the fixed part of the losses (caused by
+    # temperature difference of the de-charged storage (return
+    # temperature) and the surrounding)), becomes a constant factor
+    # again after the multiplication with the maximum storage
+    # content.
+    fix_relativ_losses = losses[1] * max_storage_content
+
+    storages.loc[lab, "invest.maximum"] = maximum
+
+    storages.loc[lab, "storage.nominal_storage_capacity"] = installed
+
+    storages.loc[lab, "invest.minimum"] = tech_data["minimum"]
+
+    storages.loc[lab, "invest.ep_costs"] = tech_data["ep_costs"]
+
+    storages.loc[lab, "invest.offset"] = tech_data["offset"]
+
+    # parameter as series
+    storages["storage.max_storage_level"] = \
+        storages["storage.max_storage_level"].astype(object)
+    storages["storage.loss_rate"] = \
+        storages["storage.loss_rate"].astype(object)
+    storages["storage.fixed_losses_relative"] = \
+        storages["storage.fixed_losses_relative"].astype(object)
+
+    storages.loc[lab, "storage.max_storage_level"] = "series"
+    timeseries[
+        lab + '.max_storage_level'] = max_storage_content
+
+    storages.loc[lab, "storage.loss_rate"] = "series"
+    timeseries[lab + '.loss_rate'] = loss_rate
+
+    storages.loc[lab, "storage.fixed_losses_relative"] = "series"
+    timeseries[lab + '.fixed_losses_relative'] = \
+        fix_relativ_losses
+
+    return storages, timeseries
 
 
 def calc_Q_max(cop_series, cop_nominal, maximum_one=False,
