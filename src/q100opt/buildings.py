@@ -200,7 +200,7 @@ class Building:
 
         energy_converter = {}
         for trafo in table_collection_template[
-            "Transformer"]["label"].copy().tolist():
+                "Transformer"]["label"].copy().tolist():
             energy_converter[trafo] = {
                 'maximum': kwargs_gis.get(trafo + ".maximum", 10),
                 'installed': kwargs_gis.get(trafo + ".installed", 0),
@@ -210,7 +210,7 @@ class Building:
 
         energy_storages = {}
         for storage in table_collection_template[
-            "Storages"]["label"].copy().tolist():
+                "Storages"]["label"].copy().tolist():
             energy_storages[storage] = {
                 'maximum': kwargs_gis.get(storage + ".maximum", 100),
                 'installed': kwargs_gis.get(storage + ".installed", 0),
