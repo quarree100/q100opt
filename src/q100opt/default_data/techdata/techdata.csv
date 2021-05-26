@@ -1,0 +1,12 @@
+,Economic parameters,,,,Technical parameters,,,,,,,,,,,,,,,,
+label,ep_costs,offset,minimum,type,efficiency,efficiency_2,carnot_quality,temp_source,temp_cop_nominal_source,temp_cop_nominal_sink,temp_icing,factor_icing,max_full_load_hours,c-rate,eta-storage,loss-rate-1/h,insulation-lambda-W/mK,insulation-thickness-mm,temp_env,diameter-m,delta_T_default-K
+gas-boiler,14.984,54.5,0,boiler,0.96,,,,,,,,,,,,,,,,
+micro-chp,20,150,0,chp,0.3,0.45,,,,,,,,,,,,,,,
+pellet-boiler,20,80,0,boiler,0.9,,,,,,,,,,,,,,,,
+wood-boiler,20,100,0,boiler,0.88,,,,,,,,,,,,,,,,
+heatpump-air,88.806,10,8,heatpump,,,0.45,,5,60,3,0.75,,,,,,,,,
+heatpump-geo,30,150,8,heatpump,,,0.45,10,10,60,,,2400,,,,,,,,
+substation,40,200,15,substation,1,,,,,,,,,,,,,,,,
+pv,63.916,0,0,solar,,,,,,,,,,,,,,,,,
+thermal-storage,1,100,10,storage,,,,,,,,,,,,,0.035,150,15,1,25
+battery-storage,100,5,3,storage,,,,,,,,,,0.5,0.9,0.00001,,,,,

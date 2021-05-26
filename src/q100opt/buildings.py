@@ -42,6 +42,11 @@ DEFAULT_TABLE_COLLECTION_1 = load_csv_data(
     os.path.join(dir_name, "default_data/building_one_temp_level")
 )
 
+DEFAUL_TECH_DATA = pd.read_csv(
+    os.path.join(dir_name, "default_data/techdata/techdata.csv"),
+    index_col=0, skiprows=1,
+)
+
 KWARGS_GIS_ATTR = pd.read_csv(
     os.path.join(dir_name, "building_attributes.csv")
 )
@@ -131,7 +136,11 @@ class Building:
         else:
             self.commodities = None
 
-        self.techdata = tech_data,
+        if tech_data is not None:
+            self.techdata = tech_data
+        else:
+            self.techdata = DEFAUL_TECH_DATA
+
         self.weather_data = weather,
 
         self.num_timesteps = timesteps
