@@ -78,7 +78,12 @@ setup(
         "oemof.solph >= 0.4.0",
     ],
     extras_require={
-        'oemof.thermal': ['oemof.thermal'],
+        "dev": [
+            "pytest",
+            "sphinx",
+            "sphinx_rtd_theme",
+            "oemof.thermal",
+        ],
     },
     entry_points={
         'console_scripts': [
