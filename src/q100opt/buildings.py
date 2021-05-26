@@ -26,12 +26,9 @@ from q100opt.setup_model import load_csv_data
 
 dir_name = os.path.dirname(__file__)
 
-# DEFAULT_WEATHER = pd.read_csv(
-#     os.path.join(
-#         os.path.dirname(os.path.abspath(__file__)),
-#         "default_data/weather/TRY2015_523938130651_Jahr.csv"
-#     ), skiprows=36, delimiter=r"\s+",
-# )
+DEFAULT_WEATHER = pd.read_csv(
+    os.path.join(dir_name, "default_data/weather/weather.csv")
+)
 
 DEFAULT_PV_SYSTEM = {
     "module": "Module A",
@@ -145,7 +142,10 @@ class Building:
         else:
             self.techdata = DEFAULT_TECH_DATA
 
-        self.weather_data = weather
+        if weather is not None:
+            self.weather_data = weather
+        else:
+            self.weather_data = DEFAULT_WEATHER
 
         self.num_timesteps = timesteps
 
