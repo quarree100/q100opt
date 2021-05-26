@@ -1,0 +1,3 @@
+label,to,flow.variable_costs,flow.emission_factor
+elec_grid_buy,b_elec,0.03,0.4
+gas_grid,b_gas,0.06,0.202

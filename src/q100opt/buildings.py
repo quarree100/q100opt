@@ -42,9 +42,13 @@ DEFAULT_TABLE_COLLECTION_1 = load_csv_data(
     os.path.join(dir_name, "default_data/building_one_temp_level")
 )
 
-DEFAUL_TECH_DATA = pd.read_csv(
+DEFAULT_TECH_DATA = pd.read_csv(
     os.path.join(dir_name, "default_data/techdata/techdata.csv"),
     index_col=0, skiprows=1,
+)
+
+DEFAULT_COMMODITY_DATA = load_csv_data(
+    os.path.join(dir_name, "default_data/commodities")
 )
 
 KWARGS_GIS_ATTR = pd.read_csv(
@@ -134,12 +138,12 @@ class Building:
         if commodity_data is not None:
             self.commodities = {k: v for k, v in commodity_data.items()}
         else:
-            self.commodities = None
+            self.commodities = DEFAULT_COMMODITY_DATA
 
         if tech_data is not None:
             self.techdata = tech_data
         else:
-            self.techdata = DEFAUL_TECH_DATA
+            self.techdata = DEFAULT_TECH_DATA
 
         self.weather_data = weather
 
@@ -381,7 +385,7 @@ class Building:
                 if k not in tables.keys():
                     tables.update({k: v})
                 else:
-                    # this is the case for the `Timeseries`
+                    # this is the case for the `Timeseries` if given
                     tables[k] = pd.concat([tables[k], v], axis=1)
 
         def _add_pv_param():
