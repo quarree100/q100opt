@@ -1,8 +1,9 @@
-import pytest
 import pandas as pd
+import pytest
 
-from q100opt.buildings import Building, DEFAULT_TABLE_COLLECTION_1,\
-    _add_battery_storage
+from q100opt.buildings import DEFAULT_TABLE_COLLECTION_1
+from q100opt.buildings import Building
+from q100opt.buildings import _add_battery_storage
 
 
 def test_building_init():
