@@ -536,49 +536,6 @@ class Building:
             storages = tables["Storages"]
             storages.set_index("label", inplace=True)
 
-            def _add_battery_storage():
-                """This method performs the pre-calculation for the battery."""
-                lab = "battery-storage"
-                if lab in storages.index:
-                    tech_data = self.techdata[0].loc[lab]
-
-                    # investment parameters
-
-                    storages.loc[lab, "invest.maximum"] = \
-                        self.energy_storages.at[lab, "maximum"]
-
-                    storages.loc[lab, "storage.nominal_storage_capacity"] = \
-                        self.energy_storages.at[lab, "installed"]
-
-                    storages.loc[lab, "invest.minimum"] = tech_data["minimum"]
-
-                    storages.loc[lab, "invest.ep_costs"] = \
-                        tech_data["ep_costs"]
-
-                    storages.loc[lab, "invest.offset"] = tech_data["offset"]
-
-                    # technical parameters
-
-                    storages.loc[
-                        lab, "storage.invest_relation_output_capacity"] = \
-                        tech_data["c-rate"]
-
-                    storages.loc[
-                        lab, "storage.invest_relation_input_capacity"] = \
-                        tech_data["c-rate"]
-
-                    storages.loc[lab, "storage.loss_rate"] = \
-                        tech_data["loss-rate-1/h"]
-
-                    in_out_flow_conversion_factor = math.sqrt(
-                        tech_data["eta-storage"])
-
-                    storages.loc[lab, "storage.inflow_conversion_factor"] = \
-                        in_out_flow_conversion_factor
-
-                    storages.loc[lab, "storage.outflow_conversion_factor"] = \
-                        in_out_flow_conversion_factor
-
             def _add_thermal_storage():
                 """
                 This method performs the pre-calculation of the thermal
@@ -666,7 +623,13 @@ class Building:
                 tables['Timeseries'][lab + '.fixed_losses_relative'] = \
                     fix_relativ_losses
 
-            _add_battery_storage()
+            tech_data = self.techdata[0].loc["battery-storage"]
+
+            storages = _add_battery_storage(
+                storages, tech_data,
+                self.energy_storages.at["battery-storage", "maximum"],
+                self.energy_storages.at["battery-storage", "installed"],
+            )
 
             _add_thermal_storage()
 
@@ -751,6 +714,52 @@ class BuildingOperationModel(Building):
 class District:
     """District class with many buildings."""
     pass
+
+
+def _add_battery_storage(storages, tech_data, maximum, installed,
+                         lab="battery-storage"):
+    """
+    This function forms the pre-calculation for the battery
+    and adds the attributes of the battery storage
+    to the `Storage` sheet of the table collection.
+
+    Notes
+    -----
+    - The charging and de-charging power are assumed to equal, and given
+      by the c-rate.
+    - The storage efficiency is split to a storage inflow efficiency and
+      a storage outflow efficiency. Both, are: sqrt(storage efficiency).
+    """
+    # investment and capacity parameters
+    storages.loc[lab, "invest.maximum"] = maximum
+
+    storages.loc[lab, "storage.nominal_storage_capacity"] = installed
+
+    storages.loc[lab, "invest.minimum"] = tech_data["minimum"]
+
+    storages.loc[lab, "invest.ep_costs"] = tech_data["ep_costs"]
+
+    storages.loc[lab, "invest.offset"] = tech_data["offset"]
+
+    # technical parameters
+
+    storages.loc[
+        lab, "storage.invest_relation_output_capacity"] = tech_data["c-rate"]
+
+    storages.loc[
+        lab, "storage.invest_relation_input_capacity"] = tech_data["c-rate"]
+
+    storages.loc[lab, "storage.loss_rate"] = tech_data["loss-rate-1/h"]
+
+    in_out_flow_conversion_factor = math.sqrt(tech_data["eta-storage"])
+
+    storages.loc[lab, "storage.inflow_conversion_factor"] = \
+        in_out_flow_conversion_factor
+
+    storages.loc[lab, "storage.outflow_conversion_factor"] = \
+        in_out_flow_conversion_factor
+
+    return storages
 
 
 def calc_Q_max(cop_series, cop_nominal, maximum_one=False,
