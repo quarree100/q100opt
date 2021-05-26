@@ -1,0 +1,8 @@
+label,active,investment,in_1,in_2,out_1,out_2,eff_in_1,eff_in_2,eff_out_1,eff_out_2,flow.nominal_value,flow.variable_costs,flow.max,invest.minimum,invest.maximum,invest.ep_costs,invest.offset,flow.summed_max
+gas-boiler,1,1,b_gas,0,b_heat,0,1,,0.96,,0,,,0,10,14.984,54.5,
+micro-chp,1,1,b_gas,0,b_elec,b_heat,1,,0.3,0.45,0,,,0,10,20,150,
+pellet-boiler,1,1,b_wood,0,b_heat,0,1,,0.9,,0,,,0,10,20,80,
+wood-boiler,1,1,b_wood,0,b_heat,0,1,,0.88,,0,,,0,10,20,100,
+heatpump-air,1,1,b_elec,0,b_heat,0,1,,series,,0,,series,8,10,88.806,10,
+heatpump-geo,1,1,b_elec,0,b_heat,0,1,,series,,0,,series,8,10,30,150,2400
+substation,1,1,b_dhs,0,b_heat,0,1,,1,,0,,,15,10,40,200,

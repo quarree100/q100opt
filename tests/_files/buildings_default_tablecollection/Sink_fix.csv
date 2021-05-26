@@ -1,0 +1,4 @@
+label,from,nominal_value
+electricity,b_elec,1
+heating,b_heat,1
+hotwater,b_heat,1

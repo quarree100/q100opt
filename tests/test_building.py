@@ -1,9 +1,15 @@
+import os
+
 import pandas as pd
 import pytest
 
 from q100opt.buildings import DEFAULT_TABLE_COLLECTION_1
 from q100opt.buildings import Building
+from q100opt.buildings import BuildingInvestModel
 from q100opt.buildings import _add_battery_storage
+from q100opt.setup_model import load_csv_data
+
+basedir = os.path.dirname(__file__)
 
 
 def test_building_init():
@@ -39,3 +45,17 @@ def test_add_battery():
                "storage.invest_relation_output_capacity", "invest.ep_costs",
                "invest.maximum", "invest.minimum", "invest.offset"]
     ))
+
+
+def test_default_house():
+    house = BuildingInvestModel()
+    tc = house.create_table_collection()
+    dir_import = os.path.join(
+        basedir, '_files/buildings_default_tablecollection'
+    )
+    tc_default = load_csv_data(dir_import)
+    assert tc.keys() == tc_default.keys()
+    for k, v in tc.items():
+        pd.testing.assert_frame_equal(
+            v, tc_default[k], check_dtype=False,
+        )

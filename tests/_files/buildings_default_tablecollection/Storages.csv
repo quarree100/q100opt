@@ -1,0 +1,3 @@
+label,active,investment,bus,storage.nominal_storage_capacity,storage.loss_rate,storage.inflow_conversion_factor,storage.outflow_conversion_factor,storage.invest_relation_input_capacity,storage.invest_relation_output_capacity,invest.ep_costs,invest.maximum,invest.minimum,inflow.nominal_value,outflow.nominal_value,storage.max_storage_level,storage.fixed_losses_relative,invest.offset
+thermal-storage,1,1,b_heat,0,series,,,,,1,100,10,,,series,series,100
+battery-storage,1,1,b_elec,0,0.0001,0.948683298,0.948683298,0.5,0.5,100,100,3,,,,,5
