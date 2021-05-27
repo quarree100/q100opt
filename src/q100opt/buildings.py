@@ -20,7 +20,10 @@ try:
     from oemof.thermal.stratified_thermal_storage import calculate_losses
 
 except ImportError:
-    print("Need to install oemof.thermal to use the buildings module.")
+    raise ImportError(
+        "Need to install oemof.thermal: \n"
+        "`pip install https://github.com/user/repository/archive/branch.zip`"
+    )
 
 from q100opt.setup_model import load_csv_data
 

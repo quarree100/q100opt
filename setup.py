@@ -82,7 +82,8 @@ setup(
             "pytest",
             "sphinx",
             "sphinx_rtd_theme",
-            "oemof.thermal",
+            "oemof.thermal@https://github.com/oemof/oemof-thermal/archive/"
+            "refs/heads/dev.zip",
         ],
     },
     entry_points={
