@@ -154,7 +154,7 @@ class DistrictScenario(Scenario):
         if couple_invest_flow is not None:
             self.add_couple_invest_contr(couple_invest_flow)
 
-        logging.info("Optimising using {0}.".format(solver))
+        logging.info("Optimising using {0} ...".format(solver))
 
         if with_duals:
             self.model.receive_duals()
@@ -490,6 +490,8 @@ class ParetoFront(DistrictScenario):
 
     def _get_min_emission(self, **kwargs):
         """Calculates the pareto point with minimum emission."""
+        logging.info("Calculate minimum emission limit ...")
+
         sc_co2opt = DistrictScenario(
             emission_limit=1000000000,
             table_collection=self.table_collection_co2opt,
@@ -500,6 +502,8 @@ class ParetoFront(DistrictScenario):
         return sc_co2opt
 
     def _get_max_emssion(self, **kwargs):
+        logging.info("Calculate maximum emission limit ...")
+
         sc_costopt = DistrictScenario(
             emission_limit=1000000000,
             table_collection=self.table_collection,
@@ -571,6 +575,14 @@ class ParetoFront(DistrictScenario):
             self.emission_limits = self._calc_emission_limits()
 
         for e in self.emission_limits:
+
+            num = self.emission_limits.index(e) + 1
+            logging.info(
+                "Calculate emission limit {} of {} ...".format(
+                    num, len(self.emission_limits)
+                )
+            )
+
             # Scenario name relative to emission range
             e_rel = (e - self.e_min) / (self.e_max - self.e_min)
             e_str = "{:.2f}".format(e_rel)
