@@ -550,6 +550,33 @@ class ParetoFront(DistrictScenario):
                 self.district_scenarios[r].results['emissions']
         return df_pareto
 
+    def update_pareto_front(self, emission_limits, dump_esys=False, **kwargs):
+        """Calculates additional points to the `ParetoFront`.
+
+        This method updates the attribute `district_scenarios` and the
+        `results` of the pareto front.
+
+        Parameters
+        ----------
+        emission_limits : list
+            Additional emission limits as list of string or floats,
+            e.g. ["0.75"], that are fractions of the maximum emission limit.
+        dump_esys : bool
+            See :func:`~scenario_tools.ParetoFront.calc_pareto_front`.
+        kwargs : dict
+            See :func:`~scenario_tools.ParetoFront.calc_pareto_front`.
+        """
+        e_limits = [float(x) for x in emission_limits]
+
+        e_limits = [x * (self.e_max - self.e_min) + self.e_min
+                    for x in e_limits]
+
+        self.emission_limits = self.emission_limits + e_limits
+
+        self.emission_limits = list(set(self.emission_limits))
+
+        self.calc_pareto_front(dump_esys=dump_esys, **kwargs)
+
     def calc_pareto_front(self, dump_esys=False, **kwargs):
         """
         Calculates the Pareto front for a given number of points, or
@@ -560,16 +587,17 @@ class ParetoFront(DistrictScenario):
         For the emission optimisation, the table_collection is prepared by
         exchanging the `variable_cost` values and the `emission_factor` values.
         """
-        if self.table_collection is not None:
-            self.table_collection_co2opt = \
-                co2_optimisation(self.table_collection)
-        else:
-            ValueError('Provide a table_collection!')
+        if (self.e_min is None) or (self.e_max is None):
+            if self.table_collection is not None:
+                self.table_collection_co2opt = \
+                    co2_optimisation(self.table_collection)
+            else:
+                ValueError('Provide a table_collection!')
 
-        self.ds_min_co2 = self._get_min_emission(**kwargs)
-        self.ds_max_co2 = self._get_max_emssion(**kwargs)
-        self.e_min = self.ds_min_co2.results['meta']['objective']
-        self.e_max = self.ds_max_co2.results['emissions']
+            self.ds_min_co2 = self._get_min_emission(**kwargs)
+            self.ds_max_co2 = self._get_max_emssion(**kwargs)
+            self.e_min = self.ds_min_co2.results['meta']['objective']
+            self.e_max = self.ds_max_co2.results['emissions']
 
         if self.emission_limits is None:
             self.emission_limits = self._calc_emission_limits()
@@ -587,27 +615,35 @@ class ParetoFront(DistrictScenario):
             e_rel = (e - self.e_min) / (self.e_max - self.e_min)
             e_str = "{:.2f}".format(e_rel)
             # e_str = str(int(round(e)))
-            ds_name = self.name + '_' + e_str
-            ds = DistrictScenario(
-                name=ds_name,
-                emission_limit=e,
-                table_collection=self.table_collection,
-                number_of_time_steps=self.number_of_time_steps,
-                year=self.year,
-            )
-            ds.solve(**kwargs)
 
-            self.district_scenarios.update(
-                {e_str: ds}
-            )
+            if e_str not in self.district_scenarios.keys():
+                ds_name = self.name + '_' + e_str
+                ds = DistrictScenario(
+                    name=ds_name,
+                    emission_limit=e,
+                    table_collection=self.table_collection,
+                    number_of_time_steps=self.number_of_time_steps,
+                    year=self.year,
+                )
+                ds.solve(**kwargs)
 
-            if dump_esys:
-                esys_path = os.path.join(self.results_fn, self.name,
-                                         "energy_system")
-                if not os.path.isdir(esys_path):
-                    os.mkdir(esys_path)
+                self.district_scenarios.update(
+                    {e_str: ds}
+                )
 
-                ds.dump(path=esys_path, filename=e_str + '_dump.des')
+                if dump_esys:
+                    esys_path = os.path.join(self.results_fn, self.name,
+                                             "energy_system")
+                    if not os.path.isdir(esys_path):
+                        os.mkdir(esys_path)
+
+                    ds.dump(path=esys_path, filename=e_str + '_dump.des')
+
+        # sort dictionary
+        self.district_scenarios = {
+            k: self.district_scenarios[k]
+            for k in sorted(self.district_scenarios.keys())
+        }
 
         self.results['pareto_front'] = self._get_pareto_results()
 
