@@ -88,6 +88,13 @@ def load_xlsx_data(filename):
     return pd.read_excel(filename, sheet_name=None)
 
 
+def tables_to_xlsx(dct, filename):
+    """Writes all tables of the table collection into a excel sheet."""
+    with pd.ExcelWriter(filename) as writer:
+        for df_name, df in dct.items():
+            df.to_excel(writer, sheet_name=df_name, index=False)
+
+
 def check_active(dct):
     """
     Checks for active components.
