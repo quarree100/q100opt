@@ -9,8 +9,10 @@ Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 SPDX-License-Identifier: MIT
 
 """
+import logging
 import math
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -75,6 +77,7 @@ class Building:
     """
 
     def __init__(self,
+                 name=None,
                  commodity_data=None,
                  tech_data=None,
                  weather=None,
@@ -591,6 +594,31 @@ class Building:
         _add_storages()
 
         self.table_collection = tables
+
+    def dump(self, path=None, filename=None):
+        """Dumps the Buidlings Instance.
+
+        The oemof.solph.EnergySystems and oemof.solph.Models of the
+        q100opt.DistrictScenarios are removed before dumping, only the results
+        are dumped.
+        """
+        # delete all oemof.solph.EnergySystems and oemof.solph.Models
+        for _, v in self.pareto_front.__dict__.items():
+            if hasattr(v, 'es') or hasattr(v, 'model'):
+                setattr(v, 'es', None)
+                setattr(v, 'model', None)
+
+        for _, des in self.pareto_front.district_scenarios.items():
+            setattr(des, 'es', None)
+            setattr(des, 'model', None)
+
+        pickle.dump(
+            self.__dict__, open(os.path.join(path, filename), "wb")
+        )
+
+        logging.info(
+            "Building dumped to {} as {}".format(path, filename)
+        )
 
 
 class BuildingInvestModel(Building):
