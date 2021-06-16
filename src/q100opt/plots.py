@@ -509,3 +509,118 @@ def plot_pareto_fronts(data_dict, show_plot=True, filename=None, title=None,
 
     if filename is not None:
         fig.savefig(filename)
+
+
+def plot_pf_invest(d_pf,
+                    x_values="label",
+                    filename=None,
+                    title=None,
+                    col=4,
+                    show_plot=True):
+    idx = pd.IndexSlice
+
+    d_scalars = {k: v.results['scalars'] for (k, v) in d_pf.items()}
+    df_scalars = pd.concat(d_scalars, axis=0)
+
+    label_invest_flow = list(df_scalars.loc[
+                             :, idx["capex", "converter", :, "invest_value"]
+                             ].columns.get_level_values(2))
+    num_invest_flows = len(label_invest_flow)
+
+    label_invest_store = \
+        list(df_scalars.loc[
+             :, idx["capex", "storage", :, "invest_value"]
+             ].columns.get_level_values(2))
+    num_invest_store = len(label_invest_store)
+
+    cols = col
+    rows = divmod(num_invest_flows, cols)[0] + \
+           np.sign(divmod(num_invest_flows, cols)[1]) + \
+           divmod(num_invest_store, cols)[0] + \
+           np.sign(divmod(num_invest_store, cols)[1])
+
+    df_scalars = df_scalars.loc[
+                 :, idx["capex", :, :, "invest_value"]
+                 ].copy()
+    df_scalars.columns = df_scalars.columns.droplevel([0, 3])
+    df_scalars["limit"] = df_scalars.index.get_level_values(1).astype('float')
+
+    fig, axes = plt.subplots(
+        nrows=rows,
+        ncols=cols,
+        sharex=True,
+        figsize=[2 * 6.4, rows * 0.5 * 4.8],
+    )
+
+    kw = {
+        # 'marker': '.',
+        'markersize': 6,
+        'linestyle': "dashed",
+    }
+
+    scenarios = list(d_pf.keys())
+    marker_list = ['X', 'o', 'v', '^', '<', '>']
+
+    for i in range(num_invest_flows):
+        r = divmod(i, cols)[0]
+        c = divmod(i, cols)[1]
+        label = label_invest_flow[i]
+
+        axes[r][0].set_ylabel("Installed power [kW]")
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+            axes[r][c].plot(
+                df_scalars.xs(sz).index.astype("float"),
+                df_scalars.loc[sz, idx[:, label]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+                # color=lookup.at[sz, 'color']
+            )
+            axes[r][c].set_title(label)
+            # axes[r][c].set_ylim(bottom=0)
+
+    offset_rows = \
+        divmod(num_invest_flows, cols)[0] + \
+        np.sign(divmod(num_invest_flows, cols)[1])
+
+    for i in range(num_invest_store):
+
+        r = divmod(i, cols)[0] + offset_rows
+        c = divmod(i, cols)[1]
+        label = label_invest_store[i]
+
+        axes[offset_rows][0].set_ylabel("Storage capacity [kWh]")
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+            axes[r][c].plot(
+                df_scalars.xs(sz).index.astype("float"),
+                df_scalars.loc[sz, idx[:, label]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+            )
+            axes[r][c].set_title(label)
+
+    h, l = axes[0][0].get_legend_handles_labels()
+
+    # plt.tight_layout()
+    # axes[0][cols-1].legend(
+    #     h, l,
+    #     bbox_to_anchor=(1.02, 1), loc='upper left', fontsize='x-small'
+    # )
+    plt.tight_layout()
+    axes[1][col-1].legend(h, l)
+    # plt.legend(h, l,
+    #            # fontsize="small",
+    #            )
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
