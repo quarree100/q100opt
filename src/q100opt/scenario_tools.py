@@ -169,7 +169,7 @@ class DistrictScenario(Scenario):
             logging.info("Store lp-file in {0}.".format(filename))
 
         solver_kwargs = {
-            "solver_cmdline_options": kwargs.get(
+            "cmdline_options": kwargs.get(
                 "solver_cmdline_options", {})}
 
         self.model.solve(
