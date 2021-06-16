@@ -9,6 +9,7 @@ Contact: Johannes Röder <johannes.roeder@uni-bremen.de>
 SPDX-License-Identifier: MIT
 
 """
+import copy
 import logging
 import math
 import os
@@ -197,7 +198,8 @@ class Building:
                 self.demand[k] = pd.Series(np.zeros(8760))
 
         if self.heating_system["system"] == "one_temp_level":
-            table_collection_template = DEFAULT_TABLE_COLLECTION_1
+            table_collection_template = \
+                copy.deepcopy(DEFAULT_TABLE_COLLECTION_1)
         else:
             raise ValueError(
                 "There is no other table collection than"
@@ -390,7 +392,7 @@ class Building:
             from the input data.
             """
             for k, v in self.commodities.items():
-                if k not in tables.keys():
+                if k != "Timeseries":
                     tables.update({k: v})
                 else:
                     # this is the case for the `Timeseries` if given
@@ -886,3 +888,13 @@ def calc_Q_max(cop_series, cop_nominal, maximum_one=False,
         max_Q_hot = [1 if x > 1 else x for x in max_Q_hot]
 
     return max_Q_hot
+
+
+def restore_invest_building(path, filename):
+    """Restores a building invest instance from dump."""
+    building = BuildingInvestModel()
+
+    building.__dict__ = \
+        pickle.load(open(os.path.join(path, filename), "rb"))
+
+    return building
