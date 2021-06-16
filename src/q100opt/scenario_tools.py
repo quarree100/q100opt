@@ -466,7 +466,7 @@ def check_label(results, label):
 class ParetoFront(DistrictScenario):
     """Class for calculation pareto fronts with costs and emission."""
     def __init__(self, emission_limits=None, number_of_points=2,
-                 dist_type='linear',
+                 dist_type='linear', emission_limits_relative=None,
                  off_set=1,
                  **kwargs):
         super().__init__(**kwargs)
@@ -478,7 +478,10 @@ class ParetoFront(DistrictScenario):
         self.ds_max_co2 = None
         self.e_min = None
         self.e_max = None
+
+        self.emission_limits_relative = emission_limits_relative
         self.emission_limits = emission_limits
+
         self.district_scenarios = dict()
         self.pareto_front = None
 
@@ -537,6 +540,18 @@ class ParetoFront(DistrictScenario):
                 ' limits implemented yet.'
             )
         return limits
+
+    def _get_abs_emission_limits(self):
+        """
+        Calculates the absolute emission limits from the relative
+        limits in str format.
+        """
+        e_limits = [float(x) for x in self.emission_limits_relative]
+
+        e_limits = [x * (self.e_max - self.e_min) + self.e_min
+                    for x in e_limits]
+
+        return e_limits
 
     def _get_pareto_results(self):
         """Gets all cost an emission values of pareto front."""
@@ -600,7 +615,10 @@ class ParetoFront(DistrictScenario):
             self.e_max = self.ds_max_co2.results['emissions']
 
         if self.emission_limits is None:
-            self.emission_limits = self._calc_emission_limits()
+            if self.emission_limits_relative is not None:
+                self.emission_limits = self._get_abs_emission_limits()
+            else:
+                self.emission_limits = self._calc_emission_limits()
 
         for e in self.emission_limits:
 
