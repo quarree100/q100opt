@@ -624,3 +624,116 @@ def plot_pf_invest(d_pf,
 
     if filename is not None:
         fig.savefig(filename)
+
+
+def plot_pf_sources_sinks(
+    d_pf, x_values="label", filename=None, title=None, col=4, show_plot=True
+):
+    """..."""
+    idx = pd.IndexSlice
+
+    d_sum = {k: v.results['sum'] for (k, v) in d_pf.items()}
+    df_sum = pd.concat(d_sum, axis=1).T
+
+    label_source_flow = list(df_sum.loc[
+                             :, idx["source", :, :]
+                             ].columns.get_level_values(1))
+    num_sources = len(label_source_flow)
+
+    label_sink_flow = \
+        list(df_sum.loc[
+             :, idx["sink", :, :]
+             ].columns.get_level_values(2))
+    num_sinks = len(label_sink_flow)
+
+    cols = col
+    rows = divmod(num_sources, cols)[0] + \
+           np.sign(divmod(num_sources, cols)[1]) + \
+           divmod(num_sinks, cols)[0] + \
+           np.sign(divmod(num_sinks, cols)[1])
+
+    df_sum = df_sum.loc[
+                 :, idx[["source", "sink"], :, :]
+                 ].copy()
+    # df_sum.columns = df_sum.columns.droplevel([0, 2])
+    df_sum["limit"] = df_sum.index.get_level_values(1).astype('float')
+
+    fig, axes = plt.subplots(
+        nrows=rows,
+        ncols=cols,
+        sharex=True,
+        figsize=[2 * 6.4, rows * 0.5 * 4.8],
+    )
+
+    kw = {
+        # 'marker': '.',
+        'markersize': 6,
+        'linestyle': "dashed",
+    }
+
+    scenarios = list(d_pf.keys())
+    marker_list = ['X', 'o', 'v', '^', '<', '>']
+
+    for i in range(num_sources):
+        r = divmod(i, cols)[0]
+        c = divmod(i, cols)[1]
+        label = label_source_flow[i]
+
+        axes[r][0].set_ylabel("Sources [kWh]")
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+            axes[r][c].plot(
+                df_sum.xs(sz).index.astype("float"),
+                df_sum.loc[sz, idx[:, label, :]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+                # color=lookup.at[sz, 'color']
+            )
+            axes[r][c].set_title(label)
+            # axes[r][c].set_ylim(bottom=0)
+
+    offset_rows = \
+        divmod(num_sources, cols)[0] + \
+        np.sign(divmod(num_sources, cols)[1])
+
+    for i in range(num_sinks):
+
+        r = divmod(i, cols)[0] + offset_rows
+        c = divmod(i, cols)[1]
+        label = label_sink_flow[i]
+
+        axes[offset_rows][0].set_ylabel("Sinks [kWh]")
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+            axes[r][c].plot(
+                df_sum.xs(sz).index.astype("float"),
+                df_sum.loc[sz, idx[:, :, label]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+            )
+            axes[r][c].set_title(label)
+
+    h, l = axes[0][0].get_legend_handles_labels()
+
+    # plt.tight_layout()
+    # axes[0][cols-1].legend(
+    #     h, l,
+    #     bbox_to_anchor=(1.02, 1), loc='upper left', fontsize='x-small'
+    # )
+    plt.tight_layout()
+    axes[1][col-1].legend(h, l)
+    # plt.legend(h, l,
+    #            # fontsize="small",
+    #            )
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
