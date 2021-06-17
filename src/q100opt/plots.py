@@ -737,3 +737,51 @@ def plot_pf_sources_sinks(
 
     if filename is not None:
         fig.savefig(filename)
+
+
+def plot_pf_pareto(d_pfa,
+                    x='specific costs [€/kWh]',
+                    y='specific emission [kg/kWh]',
+                    filename=None,
+                    title=None,
+                    show_plot=True):
+    """..."""
+    fig, ax = plt.subplots(figsize=[1.5 * 6.4, 1.5 * 4.8])
+
+    marker_list = ['X', 'o', 'v', '^', '<', '>']
+
+    scenarios = list(d_pfa.keys())
+
+    for sc in scenarios:
+        pfa = d_pfa[sc]
+
+        marker = marker_list[divmod(scenarios.index(sc), len(marker_list))[1]]
+
+        pfa.results['kpi'].T.plot(ax=ax, x=x, y=y, marker=marker, markersize=6,
+                                  ls='--', lw=0.5,
+                                  # kind='scatter',
+                                  # label=sc.split('_')[1],
+                                  # label=sc.split('_')[0]
+                                  label=sc
+                                  )
+
+        for r, c in pfa.results['kpi'].T.iterrows():
+            ax.text(
+                c[x] + 0.005 * c[x],
+                c[y] + 0.005 * c[y],
+                str(r)
+            )
+
+    plt.grid()
+    plt.xlabel(x)
+    plt.ylabel(y)
+
+    plt.legend()
+    plt.title(title)
+    plt.tight_layout()
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
