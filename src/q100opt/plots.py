@@ -580,6 +580,7 @@ def plot_pf_invest(d_pf,
                 # color=lookup.at[sz, 'color']
             )
             axes[r][c].set_title(label)
+            axes[r][c].grid(True)
             # axes[r][c].set_ylim(bottom=0)
 
     offset_rows = \
@@ -605,6 +606,7 @@ def plot_pf_invest(d_pf,
                 label=sz,
             )
             axes[r][c].set_title(label)
+            axes[r][c].grid(True)
 
     h, l = axes[0][0].get_legend_handles_labels()
 
@@ -746,7 +748,7 @@ def plot_pf_pareto(d_pfa,
                     title=None,
                     show_plot=True):
     """..."""
-    fig, ax = plt.subplots(figsize=[1.5 * 6.4, 1.5 * 4.8])
+    fig, ax = plt.subplots(figsize=[1.2 * 6.4, 1.2 * 4.8])
 
     marker_list = ['X', 'o', 'v', '^', '<', '>']
 
@@ -755,10 +757,17 @@ def plot_pf_pareto(d_pfa,
     for sc in scenarios:
         pfa = d_pfa[sc]
 
+        if "dhs" in sc:
+            line_style ='dashed'
+        elif "decentral" in sc:
+            line_style = 'dashdot'
+        else:
+            line_style = 'solid'
+
         marker = marker_list[divmod(scenarios.index(sc), len(marker_list))[1]]
 
-        pfa.results['kpi'].T.plot(ax=ax, x=x, y=y, marker=marker, markersize=6,
-                                  ls='--', lw=0.5,
+        pfa.results['kpi'].T.plot(ax=ax, x=x, y=y, marker=marker, markersize=10,
+                                  ls=line_style, lw=1.2,
                                   # kind='scatter',
                                   # label=sc.split('_')[1],
                                   # label=sc.split('_')[0]
