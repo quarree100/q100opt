@@ -617,6 +617,7 @@ class ParetoFront(DistrictScenario):
             # set max emission scenario as point "1.00"
             self.district_scenarios["1.00"] = self.ds_max_co2
             self.district_scenarios["1.00"].emission_limit = self.e_max
+            self.district_scenarios["1.00"].name = self.name + '_' + "1.00"
 
         if self.emission_limits is None:
             if self.emission_limits_relative is not None:
