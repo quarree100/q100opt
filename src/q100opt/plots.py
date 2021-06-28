@@ -24,6 +24,9 @@ from .postprocessing import get_invest_converter
 from .postprocessing import get_invest_storages
 
 
+idx = pd.IndexSlice
+
+
 def plot_invest_flows(results):
     """Plots all investment flows in a bar plot."""
     flows_invest = get_invest_converter(results)
@@ -512,11 +515,23 @@ def plot_pareto_fronts(data_dict, show_plot=True, filename=None, title=None,
 
 
 def plot_pf_invest(d_pf,
-                    x_values="label",
+                    x_values_label=None,
                     filename=None,
                     title=None,
                     col=4,
                     show_plot=True):
+
+    def _get_x_values():
+        if x_values_label is None:
+            x_val = df_scalars.xs(sz).index.astype("float")
+        else:
+            x_val = df_scalars.loc[
+                sz,
+                idx["kpi", :, :, x_values_label]
+            ].values
+
+        return x_val
+
     idx = pd.IndexSlice
 
     d_scalars = {k: v.results['scalars'] for (k, v) in d_pf.items()}
@@ -539,12 +554,6 @@ def plot_pf_invest(d_pf,
            divmod(num_invest_store, cols)[0] + \
            np.sign(divmod(num_invest_store, cols)[1])
 
-    df_scalars = df_scalars.loc[
-                 :, idx["capex", :, :, "invest_value"]
-                 ].copy()
-    df_scalars.columns = df_scalars.columns.droplevel([0, 3])
-    df_scalars["limit"] = df_scalars.index.get_level_values(1).astype('float')
-
     fig, axes = plt.subplots(
         nrows=rows,
         ncols=cols,
@@ -560,6 +569,7 @@ def plot_pf_invest(d_pf,
 
     scenarios = list(d_pf.keys())
     marker_list = ['X', 'o', 'v', '^', '<', '>']
+    xlabel = x_values_label
 
     for i in range(num_invest_flows):
         r = divmod(i, cols)[0]
@@ -571,9 +581,13 @@ def plot_pf_invest(d_pf,
         for sz in scenarios:
             marker = marker_list[divmod(scenarios.index(sz),
                                         len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
             axes[r][c].plot(
-                df_scalars.xs(sz).index.astype("float"),
-                df_scalars.loc[sz, idx[:, label]].values,
+                x_values,
+                df_scalars.loc[
+                    sz, idx["capex", :, label, "invest_value"]].values,
                 marker=marker,
                 **kw,
                 label=sz,
@@ -598,9 +612,13 @@ def plot_pf_invest(d_pf,
         for sz in scenarios:
             marker = marker_list[divmod(scenarios.index(sz),
                                         len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
             axes[r][c].plot(
-                df_scalars.xs(sz).index.astype("float"),
-                df_scalars.loc[sz, idx[:, label]].values,
+                x_values,
+                df_scalars.loc[
+                    sz, idx["capex", :, label, "invest_value"]].values,
                 marker=marker,
                 **kw,
                 label=sz,
@@ -608,18 +626,16 @@ def plot_pf_invest(d_pf,
             axes[r][c].set_title(label)
             axes[r][c].grid(True)
 
+            # add xlabel for last row
+            if r == rows-1:
+                axes[r][c].set_xlabel(xlabel)
+
     h, l = axes[0][0].get_legend_handles_labels()
 
-    # plt.tight_layout()
-    # axes[0][cols-1].legend(
-    #     h, l,
-    #     bbox_to_anchor=(1.02, 1), loc='upper left', fontsize='x-small'
-    # )
     plt.tight_layout()
     axes[1][col-1].legend(h, l)
-    # plt.legend(h, l,
-    #            # fontsize="small",
-    #            )
+
+    fig.suptitle(title)
 
     if show_plot:
         plt.show()
@@ -629,23 +645,35 @@ def plot_pf_invest(d_pf,
 
 
 def plot_pf_sources_sinks(
-    d_pf, x_values="label", filename=None, title=None, col=4, show_plot=True
+    d_pf, x_values="label", filename=None, title=None, col=4, show_plot=True,
+    x_values_label=None,
 ):
     """..."""
+    def _get_x_values():
+        if x_values_label is None:
+            x_val = df_sum.xs(sz).index.astype("float")
+        else:
+            x_val = df_sum.loc[
+                sz,
+                idx["kpi", :, :, x_values_label]
+            ].values
+
+        return x_val
+
     idx = pd.IndexSlice
 
-    d_sum = {k: v.results['sum'] for (k, v) in d_pf.items()}
-    df_sum = pd.concat(d_sum, axis=1).T
+    d_sum = {k: v.results['scalars'] for (k, v) in d_pf.items()}
+    df_sum = pd.concat(d_sum)
 
     label_source_flow = list(df_sum.loc[
-                             :, idx["source", :, :]
-                             ].columns.get_level_values(1))
+                             :, idx["sum", "source", :, :]
+                             ].columns.get_level_values(2))
     num_sources = len(label_source_flow)
 
     label_sink_flow = \
         list(df_sum.loc[
-             :, idx["sink", :, :]
-             ].columns.get_level_values(2))
+             :, idx["sum", "sink", :, :]
+             ].columns.get_level_values(3))
     num_sinks = len(label_sink_flow)
 
     cols = col
@@ -653,12 +681,6 @@ def plot_pf_sources_sinks(
            np.sign(divmod(num_sources, cols)[1]) + \
            divmod(num_sinks, cols)[0] + \
            np.sign(divmod(num_sinks, cols)[1])
-
-    df_sum = df_sum.loc[
-                 :, idx[["source", "sink"], :, :]
-                 ].copy()
-    # df_sum.columns = df_sum.columns.droplevel([0, 2])
-    df_sum["limit"] = df_sum.index.get_level_values(1).astype('float')
 
     fig, axes = plt.subplots(
         nrows=rows,
@@ -686,15 +708,19 @@ def plot_pf_sources_sinks(
         for sz in scenarios:
             marker = marker_list[divmod(scenarios.index(sz),
                                         len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
             axes[r][c].plot(
-                df_sum.xs(sz).index.astype("float"),
-                df_sum.loc[sz, idx[:, label, :]].values,
+                x_values,
+                df_sum.loc[sz, idx["sum", "source", label, :]].values,
                 marker=marker,
                 **kw,
                 label=sz,
                 # color=lookup.at[sz, 'color']
             )
             axes[r][c].set_title(label)
+            axes[r][c].grid(True)
             # axes[r][c].set_ylim(bottom=0)
 
     offset_rows = \
@@ -712,27 +738,156 @@ def plot_pf_sources_sinks(
         for sz in scenarios:
             marker = marker_list[divmod(scenarios.index(sz),
                                         len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
             axes[r][c].plot(
-                df_sum.xs(sz).index.astype("float"),
-                df_sum.loc[sz, idx[:, :, label]].values,
+                x_values,
+                df_sum.loc[sz, idx["sum", "sink", :, label]].values,
                 marker=marker,
                 **kw,
                 label=sz,
             )
             axes[r][c].set_title(label)
+            axes[r][c].grid(True)
+
+    h, l = axes[offset_rows][0].get_legend_handles_labels()
+
+    plt.tight_layout()
+    axes[1][col-1].legend(h, l)
+
+    fig.suptitle(title)
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
+
+
+def plot_bus_balance(
+    d_pf, label_bus="b_heat", x_values_label=None, filename=None,
+    title=None, show_plot=True
+):
+    def _get_x_values():
+        if x_values_label is None:
+            x_val = df_scalars.xs(sz).index.astype("float")
+        else:
+            x_val = df_scalars.loc[
+                sz,
+                idx["kpi", :, :, x_values_label]
+            ].values
+
+        return x_val
+
+    d_scalars = {k: v.results['scalars'] for (k, v) in d_pf.items()}
+    df_scalars = pd.concat(d_scalars, axis=0)
+
+    label_inflow = list(df_scalars.loc[
+                             :, idx["sum", "bus", :, label_bus]
+                             ].columns.get_level_values(2))
+    num_inflow = len(label_inflow)
+
+    label_outflow = list(df_scalars.loc[
+                             :, idx["sum", "bus", label_bus, :]
+                             ].columns.get_level_values(3))
+
+    num_outflow = len(label_outflow)
+
+    rows = max(num_outflow, num_inflow)
+
+    fig, axes = plt.subplots(
+        nrows=rows,
+        ncols=2,
+        sharex=True,
+        figsize=[2.4 * 6.4, rows * 0.4 * 4.8],
+        # constrained_layout=True,
+    )
+
+    kw = {
+        # 'marker': '.',
+        'markersize': 6,
+        'linestyle': "dashed",
+    }
+
+    scenarios = list(d_pf.keys())
+    marker_list = ['X', 'o', 'v', '^', '<', '>']
+
+    axes[0][0].set_title("Feed-in")
+
+    for i in range(num_inflow):
+
+        label = label_inflow[i]
+
+        axes[i][0].set_ylabel("Energy [kWh]")
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
+            axes[i][0].plot(
+                x_values,
+                df_scalars.loc[
+                    sz, idx["sum", "bus", label, label_bus]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+            )
+            axes[i][0].set_title(label)
+            axes[i][0].grid(True)
+
+            # add xlabel for last row
+            if i == rows - 1:
+                axes[i][0].set_xlabel(x_values_label)
+
+    axes[0][1].set_title("Feed-out")
+
+    for i in range(num_outflow):
+
+        label = label_outflow[i]
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
+            axes[i][1].plot(
+                x_values,
+                df_scalars.loc[
+                    sz, idx["sum", "bus", label_bus, label]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+            )
+            axes[i][1].set_title(label)
+            axes[i][1].grid(True)
+
+            # add xlabel for last row
+            if i == rows - 1:
+                axes[i][1].set_xlabel(x_values_label)
 
     h, l = axes[0][0].get_legend_handles_labels()
 
-    # plt.tight_layout()
-    # axes[0][cols-1].legend(
+    # axes[0][1].legend(
     #     h, l,
-    #     bbox_to_anchor=(1.02, 1), loc='upper left', fontsize='x-small'
+    #     bbox_to_anchor=(1.05, 1.0), loc='upper left',
+    #     # fontsize="small"
+    #     # loc="lower center", bbox_to_anchor=(0.5, -0.3),
     # )
-    plt.tight_layout()
-    axes[1][col-1].legend(h, l)
-    # plt.legend(h, l,
-    #            # fontsize="small",
-    #            )
+
+    leg = fig.legend(h, l, loc='upper left',
+                     bbox_to_anchor=(1.05, 1),
+                     bbox_transform=axes[0][1].transAxes)
+
+    fig.suptitle(title)
+
+    plt.tight_layout(
+        # pad=1.0,
+        rect=(0, 0, 0.6, 1)
+    )
 
     if show_plot:
         plt.show()
