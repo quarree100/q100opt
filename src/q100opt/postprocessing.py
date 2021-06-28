@@ -420,6 +420,7 @@ def get_all_sequences(results):
         'source': solph.Source,
         'transformer': solph.Transformer,
         'storage_flow': solph.GenericStorage,
+        'bus': solph.Bus,
     }
 
     l_df = []
