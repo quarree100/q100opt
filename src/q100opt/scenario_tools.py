@@ -544,17 +544,30 @@ class ParetoFront(DistrictScenario):
             )
         return limits
 
-    def _get_abs_emission_limits(self):
+    def _get_abs_emission_limits(self, emission_limits):
         """
         Calculates the absolute emission limits from the relative
         limits in str format.
         """
-        e_limits = [float(x) for x in self.emission_limits_relative]
+        e_limits = [float(x) for x in emission_limits
+                    if x != "zero"]
 
         e_limits = [x * (self.e_max - self.e_min) + self.e_min
                     for x in e_limits]
 
-        return e_limits
+        if ("zero" in emission_limits) and (self.e_min * self.e_max < 0):
+            e_null = [0.0]
+        else:
+            e_null = []
+
+        if self.emission_limits is not None:
+            self.emission_limits = self.emission_limits + e_limits + e_null
+        else:
+            self.emission_limits = e_limits + e_null
+
+        self.emission_limits = list(set(self.emission_limits))
+
+        return self.emission_limits
 
     def _get_pareto_results(self):
         """Gets all cost an emission values of pareto front."""
@@ -584,20 +597,7 @@ class ParetoFront(DistrictScenario):
         kwargs : dict
             See :func:`~scenario_tools.ParetoFront.calc_pareto_front`.
         """
-        e_limits = [float(x) for x in emission_limits
-                    if x != "zero"]
-
-        e_limits = [x * (self.e_max - self.e_min) + self.e_min
-                    for x in e_limits]
-
-        if ("zero" in emission_limits) and (self.e_min * self.e_max < 0):
-            e_null = [0.0]
-        else:
-            e_null = []
-
-        self.emission_limits = self.emission_limits + e_limits + e_null
-
-        self.emission_limits = list(set(self.emission_limits))
+        self.emission_limits = self._get_abs_emission_limits(emission_limits)
 
         self.calc_pareto_front(dump_esys=dump_esys, **kwargs)
 
@@ -630,7 +630,9 @@ class ParetoFront(DistrictScenario):
 
         if self.emission_limits is None:
             if self.emission_limits_relative is not None:
-                self.emission_limits = self._get_abs_emission_limits()
+                self.emission_limits = self._get_abs_emission_limits(
+                    emission_limits=self.emission_limits_relative
+                )
             else:
                 self.emission_limits = self._calc_emission_limits()
 
