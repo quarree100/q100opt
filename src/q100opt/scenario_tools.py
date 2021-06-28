@@ -387,6 +387,9 @@ class DistrictScenario(Scenario):
             df_param = self.results['table_collection']['Timeseries'].copy()
             df_param = df_param.iloc[:ind_length]
 
+            if 'Unnamed: 0' in df_param.columns:
+                df_param.drop(['Unnamed: 0'], axis=1, inplace=True)
+
             list_of_tuples = [
                 ('parameter', x.split('.')[0], x.split('.')[1])
                 for x in df_param.columns
@@ -581,12 +584,18 @@ class ParetoFront(DistrictScenario):
         kwargs : dict
             See :func:`~scenario_tools.ParetoFront.calc_pareto_front`.
         """
-        e_limits = [float(x) for x in emission_limits]
+        e_limits = [float(x) for x in emission_limits
+                    if x != "zero"]
 
         e_limits = [x * (self.e_max - self.e_min) + self.e_min
                     for x in e_limits]
 
-        self.emission_limits = self.emission_limits + e_limits
+        if ("zero" in emission_limits) and (self.e_min * self.e_max < 0):
+            e_null = [0.0]
+        else:
+            e_null = []
+
+        self.emission_limits = self.emission_limits + e_limits + e_null
 
         self.emission_limits = list(set(self.emission_limits))
 
@@ -887,11 +896,14 @@ class ParetoFront(DistrictScenario):
         )
 
         df_kpi.columns = mi
+        df_sum = pd.concat([self.results['sum']],
+                           keys=['sum'], names=[None]).T
 
         df_scalars = pd.concat([
             df_kpi,
             self.results['costs'],
-            self.results['emissions']
+            self.results['emissions'],
+            df_sum,
         ], axis=1)
 
         return df_scalars
@@ -937,6 +949,37 @@ class ParetoFront(DistrictScenario):
         """Plots the energy system graph."""
         des = next(iter(self.district_scenarios.values()))
         des.plot(show=show)
+
+    def export_results_to_xlsx(self, filename, override=True):
+        """Exports all results of paretor front to a excel file."""
+        def _export_results():
+            with pd.ExcelWriter(filename) as writer:
+                r = self.results
+                r["kpi"].to_excel(writer, sheet_name="kpi")
+                r["costs"].T.to_excel(writer, sheet_name="costs")
+                r["emissions"].T.to_excel(writer, sheet_name="emissions")
+                r["sum"].to_excel(writer, sheet_name="sum")
+                r["sequences"].to_excel(writer, sheet_name="sequences")
+                logging.info(
+                    "Results exported to : %s" % filename
+                )
+
+        filename = filename + ".xlsx"
+
+        if os.path.isfile(filename):
+            if override:
+                logging.info(
+                    "Results already exist and are overwritten"
+                    " : %s" % filename
+                )
+                _export_results()
+            else:
+                logging.info(
+                    "Results already exist and are not overwritten"
+                    " : %s" % filename
+                )
+        else:
+            _export_results()
 
 
 def load_pareto_front(path, filename):
