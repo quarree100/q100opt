@@ -952,7 +952,8 @@ class ParetoFront(DistrictScenario):
         des = next(iter(self.district_scenarios.values()))
         des.plot(show=show)
 
-    def export_results_to_xlsx(self, filename, override=True):
+    def export_results_to_xlsx(self, filename, override=True,
+                               include_sequences=True):
         """Exports all results of paretor front to a excel file."""
         def _export_results():
             with pd.ExcelWriter(filename) as writer:
@@ -961,7 +962,8 @@ class ParetoFront(DistrictScenario):
                 r["costs"].T.to_excel(writer, sheet_name="costs")
                 r["emissions"].T.to_excel(writer, sheet_name="emissions")
                 r["sum"].to_excel(writer, sheet_name="sum")
-                r["sequences"].to_excel(writer, sheet_name="sequences")
+                if include_sequences:
+                    r["sequences"].to_excel(writer, sheet_name="sequences")
                 logging.info(
                     "Results exported to : %s" % filename
                 )
