@@ -897,11 +897,14 @@ def plot_bus_balance(
 
 
 def plot_pf_pareto(d_pfa,
-                    x='specific costs [€/kWh]',
-                    y='specific emission [kg/kWh]',
-                    filename=None,
-                    title=None,
-                    show_plot=True):
+                   x='specific costs [€/kWh]',
+                   y='specific emission [kg/kWh]',
+                   filename=None,
+                   title=None,
+                   show_plot=True,
+                   xlimits=None,
+                   ylimits=None,
+                   ):
     """..."""
     fig, ax = plt.subplots(figsize=[1.2 * 6.4, 1.2 * 4.8])
 
@@ -921,7 +924,8 @@ def plot_pf_pareto(d_pfa,
 
         marker = marker_list[divmod(scenarios.index(sc), len(marker_list))[1]]
 
-        pfa.results['kpi'].T.plot(ax=ax, x=x, y=y, marker=marker, markersize=10,
+        pfa.results['kpi'].T.plot(ax=ax, x=x, y=y, marker=marker,
+                                  markersize=10,
                                   ls=line_style, lw=1.2,
                                   # kind='scatter',
                                   # label=sc.split('_')[1],
@@ -929,16 +933,19 @@ def plot_pf_pareto(d_pfa,
                                   label=sc
                                   )
 
-        for r, c in pfa.results['kpi'].T.iterrows():
-            ax.text(
-                c[x] + 0.005 * c[x],
-                c[y] + 0.005 * c[y],
-                str(r)
-            )
+        # for r, c in pfa.results['kpi'].T.iterrows():
+        #     ax.text(
+        #         c[x] + 0.005 * c[x],
+        #         c[y] + 0.005 * c[y],
+        #         str(r)
+        #     )
 
     plt.grid()
     plt.xlabel(x)
     plt.ylabel(y)
+
+    plt.ylim(ylimits)
+    plt.xlim(xlimits)
 
     plt.legend()
     plt.title(title)
