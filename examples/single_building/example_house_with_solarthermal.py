@@ -42,6 +42,12 @@ kataster = {
     'roof_3_pitch': 35,             # Dachneigung in [°]
     'roof_3_area_usable': 25,       # [m²]
 
+    # solar thermal options
+    # maximum share of roof area considered for solar thermal
+    'st_1_max': 0,
+    'st_2_max': 1,
+    'st_3_max': 0.6,
+
     # maximum values of units (for investment model)
     "gas-boiler.maximum": 100,
     "pellet-boiler.maximum": 0,
@@ -72,6 +78,8 @@ house = BuildingInvestModel(
     tech_data=tech_data,
     weather=weather,
     timesteps=8760,
+    start_date="2015-01-01 01:00",
+    location=(52.516254, 13.377535),
     solar_thermal_collector=my_collector,
     **kataster,
 )
