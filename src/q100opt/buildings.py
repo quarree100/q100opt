@@ -90,6 +90,7 @@ class Building:
                  pv_1_profile=None,
                  pv_2_profile=None,
                  pv_3_profile=None,
+                 solar_thermal_collector=None,
                  **kwargs_gis
                  ):
         """
@@ -128,12 +129,15 @@ class Building:
             Sequence with normed PV profile of roof 2.
         pv_3_profile : pandas.Series
             Sequence with normed PV profile of roof 3.
+        solar_thermal_collector : q100opt.buildings.SolarThermalCollector
+            Specific solar thermal collector type.
 
         kwargs_gis :
             Additional scalar or str parameters settings. Please see
             `q100opt.buildings_attributes.csv` for further explanation.
         """
 
+        # check for allowed attributes
         for key in kwargs_gis.keys():
             if key not in list(KWARGS_GIS_ATTR['Attribute'].values):
                 ae = "Attribute `{}` is not allowed!".format(key)
@@ -227,6 +231,8 @@ class Building:
         self.energy_storages = pd.DataFrame(energy_storages).T
 
         self.roof_data = None
+
+        self.solar_thermal_collector = solar_thermal_collector
 
         self.pv = dict()
         self.set_pv_attributes(
@@ -689,6 +695,52 @@ class BuildingOperationModel(Building):
 class District:
     """District class with many buildings."""
     pass
+
+
+class SolarThermalCollector:
+    """
+    The SolarThermalCollector class represents a specific type of a
+    Solarthermal Collector and contains the parameters given by the
+    manufacturer.
+
+    All parameter needed for calculating of the thermal efficiency dependent on
+    the operation and are not part of this class.
+
+    Examples
+    --------
+    Basic usage examples of the SolarThermalCollector:
+    >>> from q100opt.buildings import SolarThermalCollector
+    >>> my_collector = SolarThermalCollector(
+    ...     eta_0=0.825,
+    ...     a_1=3.41,
+    ...     a_2=0.002,
+    ...     )
+    """
+    def __init__(self,
+                 eta_0=0.825,
+                 a_1=3.41,
+                 a_2=0.0161,
+                 ):
+        """
+        Default values baesd on model "SOL 27 premium W" of STIEBEL ELTRON,
+        see:
+
+        https://www.stiebel-eltron.de/content/dam/ste/de/de/products/downloads
+        /Planungsunterlagen/Planungshandbuch/Planungshandbuch_EE_Solar.pdf
+
+        Parameters
+        ----------
+        eta_0 : float
+            Optical efficiency of the collector
+        a_1 : float
+            Thermal loss parameter 1
+        a_2 : float
+            Thermal loss parameter 2
+
+        """
+        self.eta_0 = eta_0
+        self.a_1 = a_1
+        self.a_2 = a_2
 
 
 def _add_battery_storage(storages, tech_data, maximum, installed,
