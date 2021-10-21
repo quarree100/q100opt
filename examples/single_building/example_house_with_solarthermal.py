@@ -44,9 +44,9 @@ kataster = {
 
     # solar thermal options
     # maximum share of roof area considered for solar thermal
-    'st_1_max': 0,
-    'st_2_max': 1,
-    'st_3_max': 0.6,
+    'st_1_max': 0.8,
+    'st_2_max': 0.8,
+    'st_3_max': 0.8,
 
     # maximum values of units (for investment model)
     "gas-boiler.maximum": 100,
