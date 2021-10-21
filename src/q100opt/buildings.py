@@ -389,7 +389,7 @@ class Building:
             }
 
             logging.info("Solarthermal profile %i of %i calculated.",
-                         (i+1, len(self.roof_data)))
+                         i+1, len(self.roof_data))
 
             self.solarthermal.append(st_sysytem)
 
@@ -520,31 +520,41 @@ class Building:
             Fills the table `Source_fix` with the Solarthermal parameters.
             """
 
-            print('fertig.')
+            prefix = "solarthermal_"
+            bus_label = "b_heat"
 
-            PVs = ["pv_1", "pv_2", "pv_3"]
-            for pv in PVs:
-                index = \
-                    tables['Source_fix'].loc[
-                        tables['Source_fix']['label'] == pv].index[0]
+            for i in range(len(self.solarthermal)):
 
-                tables['Source_fix'].loc[index, 'invest.maximum'] = \
-                    self.pv["potentials"][pv]['maximum']
+                st_row = pd.Series(
+                    index=tables["Source_fix"].columns
+                )
 
-                tables['Source_fix'].loc[index, 'flow.nominal_value'] = \
-                    self.pv["potentials"][pv]['installed']
+                st_label = prefix + str(i+1)
 
-                tables['Source_fix'].loc[index, 'invest.minimum'] = \
-                    self.techdata.loc["pv"]["minimum"]
+                st_row["label"] = st_label
 
-                tables['Source_fix'].loc[index, 'invest.ep_costs'] = \
-                    self.techdata.loc["pv"]["ep_costs"]
+                st_row["to"] = bus_label
 
-                tables['Source_fix'].loc[index, 'invest.offset'] = \
-                    self.techdata.loc["pv"]["offset"]
+                st_row["invest.maximum"] = self.solarthermal[i]["maximum"]
 
-                tables['Timeseries'][pv + '.fix'] = \
-                    self.pv["potentials"][pv]['profile'].values
+                st_row["flow.nominal_value"] = \
+                    self.solarthermal[i]["installed"]
+
+                st_row["invest.minimum"] = \
+                    self.techdata.loc["solarthermal"]["minimum"]
+
+                st_row["invest.ep_costs"] = \
+                    self.techdata.loc["solarthermal"]["ep_costs"]
+
+                st_row["invest.offset"] = \
+                    self.techdata.loc["solarthermal"]["offset"]
+
+                tables['Timeseries'][st_label + '.fix'] = \
+                    self.solarthermal[i]['profile']
+
+                tables["Source_fix"] = \
+                    tables["Source_fix"].append(st_row, ignore_index=True)
+
 
         def _add_demands():
             """Adds the demand timeseries to the table collection."""
