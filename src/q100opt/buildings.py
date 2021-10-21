@@ -20,6 +20,7 @@ import pandas as pd
 
 try:
     from oemof.thermal.compression_heatpumps_and_chillers import calc_cops
+    from oemof.thermal.solar_thermal_collector import flat_plate_precalc
     from oemof.thermal.stratified_thermal_storage import calculate_losses
 
 except ImportError:
@@ -83,6 +84,10 @@ class Building:
                  tech_data=None,
                  weather=None,
                  timesteps=8760,
+                 start_date="2018-01-01 00:00",
+                 freq="H",
+                 timezone='CET',
+                 location=(52.516254, 13.377535),
                  system_configuration="one_temp_level",
                  electricity_demand=None,
                  space_heating_demand=None,
@@ -160,6 +165,14 @@ class Building:
 
         self.num_timesteps = timesteps
 
+        if start_date is not None:
+            self.datetimeindex = pd.date_range(
+                start=start_date, periods=timesteps, freq=freq, tz=timezone
+            )
+            self.weather_data.index = self.datetimeindex
+
+        self.location = location
+
         self.id = kwargs_gis.get("id")
 
         # some general buildings attributes
@@ -230,14 +243,43 @@ class Building:
 
         self.energy_storages = pd.DataFrame(energy_storages).T
 
-        self.roof_data = None
-
-        self.solar_thermal_collector = solar_thermal_collector
+        self.roof_data = [
+            RoofArea(
+                area=kwargs_gis.get("roof_1_area_usable", 0),
+                pitch=kwargs_gis.get("roof_1_pitch", 0),
+                azimuth=kwargs_gis.get("roof_1_azimuth", 0),
+            ),
+            RoofArea(
+                area=kwargs_gis.get("roof_2_area_usable", 0),
+                pitch=kwargs_gis.get("roof_2_pitch", 0),
+                azimuth=kwargs_gis.get("roof_2_azimuth", 0),
+            ),
+            RoofArea(
+                area=kwargs_gis.get("roof_3_area_usable", 0),
+                pitch=kwargs_gis.get("roof_3_pitch", 0),
+                azimuth=kwargs_gis.get("roof_3_azimuth", 0),
+            ),
+        ]
 
         self.pv = dict()
         self.set_pv_attributes(
             pv_1_profile, pv_2_profile, pv_3_profile,
             **kwargs_gis
+        )
+
+        self.solar_thermal_collector = solar_thermal_collector
+        self.solarthermal = []
+        self.set_st_attributes(
+            maximum_values=[
+                kwargs_gis.get("st_1_max", 0),
+                kwargs_gis.get("st_2_max", 0),
+                kwargs_gis.get("st_3_max", 0),
+            ],
+            installed_values=[
+                kwargs_gis.get("st_1_installed", 0),
+                kwargs_gis.get("st_2_installed", 0),
+                kwargs_gis.get("st_3_installed", 0),
+            ]
         )
 
         self.table_collection = table_collection_template
@@ -310,6 +352,46 @@ class Building:
         self.pv.update({
             "pv_system": pv_system
         })
+
+    def set_st_attributes(self, maximum_values, installed_values):
+        """
+        Calculates the normed collector heat [W/m²] for each of the roofs
+        and appends the results as pandas.DataFrame to the list (attribute
+        `solarthermal`).
+        """
+        for i in range(len(self.roof_data)):
+
+            roof = self.roof_data[i]
+
+            delta_temp_mean = 0.5 * (self.heating_system["temp_forward"] - \
+                              self.heating_system["temp_return"])
+
+            precalc_data = flat_plate_precalc(
+                lat=self.location[0],
+                long=self.location[1],
+                collector_tilt=roof.pitch,
+                collector_azimuth=roof.azimuth,
+                eta_0=self.solar_thermal_collector.eta_0,
+                a_1=self.solar_thermal_collector.a_1,
+                a_2=self.solar_thermal_collector.a_2,
+                temp_collector_inlet=self.heating_system["temp_return"],
+                delta_temp_n=delta_temp_mean,
+                irradiance_global=self.weather_data["global_horizontal_W_m2"],
+                irradiance_diffuse=self.weather_data["diffuse_horizontal_W_m2"],
+                temp_amb=self.weather_data["weather.temperature"],
+            )
+
+            st_sysytem = {
+                "precalc_data": precalc_data,
+                "profile": precalc_data["collectors_heat"].values,
+                "maximum": maximum_values[i],
+                "installed": installed_values[i],
+            }
+
+            logging.info("Solarthermal profile %i of %i calculated.",
+                         (i+1, len(self.roof_data)))
+
+            self.solarthermal.append(st_sysytem)
 
     def calc_pv_profiles(self):
         """Pre-calculation of roof specific pv profiles for each roof."""
@@ -409,6 +491,37 @@ class Building:
             Fills the table `Source_fix` with the PV parameters from
             the Kataster data, and the `tech data`.
             """
+            PVs = ["pv_1", "pv_2", "pv_3"]
+            for pv in PVs:
+                index = \
+                    tables['Source_fix'].loc[
+                        tables['Source_fix']['label'] == pv].index[0]
+
+                tables['Source_fix'].loc[index, 'invest.maximum'] = \
+                    self.pv["potentials"][pv]['maximum']
+
+                tables['Source_fix'].loc[index, 'flow.nominal_value'] = \
+                    self.pv["potentials"][pv]['installed']
+
+                tables['Source_fix'].loc[index, 'invest.minimum'] = \
+                    self.techdata.loc["pv"]["minimum"]
+
+                tables['Source_fix'].loc[index, 'invest.ep_costs'] = \
+                    self.techdata.loc["pv"]["ep_costs"]
+
+                tables['Source_fix'].loc[index, 'invest.offset'] = \
+                    self.techdata.loc["pv"]["offset"]
+
+                tables['Timeseries'][pv + '.fix'] = \
+                    self.pv["potentials"][pv]['profile'].values
+
+        def _add_st_param():
+            """
+            Fills the table `Source_fix` with the Solarthermal parameters.
+            """
+
+            print('fertig.')
+
             PVs = ["pv_1", "pv_2", "pv_3"]
             for pv in PVs:
                 index = \
@@ -597,6 +710,7 @@ class Building:
 
         _add_commodity_tables()
         _add_pv_param()
+        _add_st_param()
         _add_demands()
         _add_transformer()
         _add_storages()
@@ -741,6 +855,45 @@ class SolarThermalCollector:
         self.eta_0 = eta_0
         self.a_1 = a_1
         self.a_2 = a_2
+
+
+class RoofArea:
+    """
+    The RoofArea class represents a specific roof area for the installation
+    of PV or solar thermal.
+
+    A RoofArea is characterized by an usable area, a slope angle, and the
+    orientation (azimuth).
+
+    Examples
+    --------
+    Basic usage examples of the RoofArea:
+    >>> from q100opt.buildings import RoofArea
+    >>> my_roof_1 = RoofArea(
+    ...     area=20,
+    ...     pitch=30,
+    ...     azimuth=0,
+    ...     )
+    """
+    def __init__(self,
+                 area=None,
+                 pitch=None,
+                 azimuth=None,
+                 ):
+        """
+
+        Parameters
+        ----------
+        area : float
+            Usable area for solar applicataion in [m²]
+        pitch : float
+            Pitch angle of the area [°]
+        azimuth : float
+            Orientation of area analog to PVlib [°]
+        """
+        self.area = area
+        self.pitch = pitch
+        self.azimuth = azimuth
 
 
 def _add_battery_storage(storages, tech_data, maximum, installed,
