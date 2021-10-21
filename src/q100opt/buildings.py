@@ -268,19 +268,22 @@ class Building:
         )
 
         self.solar_thermal_collector = solar_thermal_collector
+
         self.solarthermal = []
-        self.set_st_attributes(
-            maximum_values=[
-                kwargs_gis.get("st_1_max", 0),
-                kwargs_gis.get("st_2_max", 0),
-                kwargs_gis.get("st_3_max", 0),
-            ],
-            installed_values=[
-                kwargs_gis.get("st_1_installed", 0),
-                kwargs_gis.get("st_2_installed", 0),
-                kwargs_gis.get("st_3_installed", 0),
-            ]
-        )
+
+        if self.solar_thermal_collector is not None:
+            self.set_st_attributes(
+                maximum_values=[
+                    kwargs_gis.get("st_1_max", 0),
+                    kwargs_gis.get("st_2_max", 0),
+                    kwargs_gis.get("st_3_max", 0),
+                ],
+                installed_values=[
+                    kwargs_gis.get("st_1_installed", 0),
+                    kwargs_gis.get("st_2_installed", 0),
+                    kwargs_gis.get("st_3_installed", 0),
+                ]
+            )
 
         self.table_collection = table_collection_template
         self.pareto_front = None
