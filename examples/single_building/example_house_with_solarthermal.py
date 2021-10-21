@@ -1,14 +1,14 @@
 import pandas as pd
 from matplotlib import pyplot as plt
+from oemof.tools import logger
+import logging
 
 import q100opt.plots as plots
 from q100opt.buildings import BuildingInvestModel, SolarThermalCollector
 from q100opt.scenario_tools import ParetoFront
 from q100opt.setup_model import load_csv_data
 
-my_collector = SolarThermalCollector(
-    eta_0=0.8, a_1=4, a_2=0.002
-)
+logger.define_logging(screen_level=logging.INFO)
 
 # read data
 timeseries = pd.read_csv("data/test-building-timeseries.csv")
@@ -30,17 +30,17 @@ kataster = {
 
     # roof areas
     # roof 1, e.g. west orientation
-    'roof_1_azimuth': 120,          # Ausrichtung [°]
-    'roof_1_pitch': 20,             # Dachneigung in [°]
-    'roof_1_area_usable': 30,       # [m²]
+    'roof_1_azimuth': 90,          # Ausrichtung [°]
+    'roof_1_pitch': 40,             # Dachneigung in [°]
+    'roof_1_area_usable': 40,       # [m²]
     # roof 1, e.g. south orientation
-    'roof_2_azimuth': 20,           # Ausrichtung [°]
-    'roof_2_pitch': 30,             # Dachneigung in [°]
-    'roof_2_area_usable': 60,       # [m²]
+    'roof_2_azimuth': 180,           # Ausrichtung [°]
+    'roof_2_pitch': 40,             # Dachneigung in [°]
+    'roof_2_area_usable': 40,       # [m²]
     # roof 1, e.g. east orientation
-    'roof_3_azimuth': 300,          # Ausrichtung [°]
-    'roof_3_pitch': 35,             # Dachneigung in [°]
-    'roof_3_area_usable': 25,       # [m²]
+    'roof_3_azimuth': 270,          # Ausrichtung [°]
+    'roof_3_pitch': 40,             # Dachneigung in [°]
+    'roof_3_area_usable': 40,       # [m²]
 
     # solar thermal options
     # maximum share of roof area considered for solar thermal
@@ -67,6 +67,12 @@ kataster = {
     "thermal-storage.installed": 0,
     "battery-storage.installed": 0,
 }
+
+my_collector = SolarThermalCollector(
+    eta_0=0.825,
+    a_1=3.41,
+    a_2=0.0161,
+)
 
 house = BuildingInvestModel(
     space_heating_demand=timeseries["E_th_RH"],
