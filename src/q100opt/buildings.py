@@ -552,12 +552,12 @@ class Building:
                 st_row["invest.offset"] = \
                     self.techdata.loc["solarthermal"]["offset"]
 
+                # convert W/m² >> kW/m² !!
                 tables['Timeseries'][st_label + '.fix'] = \
-                    self.solarthermal[i]['profile']
+                    self.solarthermal[i]['profile'] * 0.001
 
                 tables["Source_fix"] = \
                     tables["Source_fix"].append(st_row, ignore_index=True)
-
 
         def _add_demands():
             """Adds the demand timeseries to the table collection."""
