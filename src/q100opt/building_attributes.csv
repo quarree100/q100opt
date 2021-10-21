@@ -51,3 +51,6 @@ pv,operation,pv_1_installed,float,,Installed PV capacity [kW] on roof 1,optional
 ,investment,pv_1_max,float,,Maximum PV capacity [kW] on roof 1,optional,
 ,investment,pv_2_max,float,,Maximum PV capacity [kW] on roof 2,optional,
 ,investment,pv_3_max,float,,Maximum PV capacity [kW] on roof 3,optional,
+solarthermal,investment,st_1_max,float,,Maximum Solarthermal capacity relativ to the usable roof area of roof 1 [-] (values from 0 to 1),optional,
+,investment,st_2_max,float,,Maximum Solarthermal capacity relativ to the usable roof area of roof 2 [-] (values from 0 to 1),optional,
+,investment,st_3_max,float,,Maximum Solarthermal capacity relativ to the usable roof area of roof 3 [-] (values from 0 to 1),optional,
