@@ -384,7 +384,7 @@ class Building:
             st_sysytem = {
                 "precalc_data": precalc_data,
                 "profile": precalc_data["collectors_heat"].values,
-                "maximum": maximum_values[i],
+                "maximum": maximum_values[i] * roof.area,
                 "installed": installed_values[i],
             }
 
