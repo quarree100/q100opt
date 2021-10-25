@@ -38,6 +38,7 @@ DEFAULT_WEATHER = pd.read_csv(
 )
 
 DEFAULT_PV_SYSTEM = {
+    "space_demand": 5,  # [m²/kWp]
     "module": "Module A",
     "inverter": "Inverter C",
 }
@@ -96,6 +97,7 @@ class Building:
                  pv_2_profile=None,
                  pv_3_profile=None,
                  solar_thermal_collector=None,
+                 pv_system=DEFAULT_PV_SYSTEM,
                  **kwargs_gis
                  ):
         """
@@ -266,6 +268,7 @@ class Building:
             pv_1_profile, pv_2_profile, pv_3_profile,
             **kwargs_gis
         )
+        self.pv_system = pv_system
 
         self.solar_thermal_collector = solar_thermal_collector
 
@@ -515,6 +518,12 @@ class Building:
                 tables['Source_fix'].loc[index, 'invest.offset'] = \
                     self.techdata.loc["pv"]["offset"]
 
+                pv_num = pv.split('_')[1]
+                tables['Source_fix'].loc[
+                    index, 'invest.roof_area_' + pv_num
+                ] = \
+                    self.pv_system["space_demand"]
+
                 tables['Timeseries'][pv + '.fix'] = \
                     self.pv["potentials"][pv]['profile'].values
 
@@ -589,6 +598,8 @@ class Building:
 
                 st_row["invest.offset"] = \
                     self.techdata.loc["solarthermal"]["offset"]
+
+                st_row["invest.roof_area_" + str(i+1)] = 1
 
                 # convert W/m² >> kW/m² !!
                 tables['Timeseries'][st_label + '.fix'] = \
@@ -804,8 +815,10 @@ class BuildingInvestModel(Building):
     ----------
     See :class:`Building`
     """
-    def __init__(self, **kwargs):
+    def __init__(self, exclusive_roof_constraint, **kwargs):
         super().__init__(**kwargs)
+
+        self.exclusive_roof_constraint=exclusive_roof_constraint
 
     def create_table_collection(self):
         """Creates the table collection for the energy system model."""
@@ -821,7 +834,28 @@ class BuildingInvestModel(Building):
                 if c['invest.maximum'] == 0:
                     self.table_collection[x].loc[r, 'active'] = 0
 
+        if self.exclusive_roof_constraint:
+            self.add_constraint_table()
+
+
         return self.table_collection
+
+    def add_constraint_table(self):
+        """
+        Creates the `Additional_constraints` table of the table collection.
+        """
+        add_con_table = pd.DataFrame(
+            columns=["type", "keyword", "limit"],
+            index=range(len(self.roof_data))
+        )
+
+        add_con_table["type"] = "additional_resource"
+        add_con_table["keyword"] = [
+            "roof_area_" + str(x+1) for x in range(len(self.roof_data))
+        ]
+        add_con_table["limit"] = [x.area for x in self.roof_data]
+
+        self.table_collection["Additional_constraints"] = add_con_table
 
 
 class BuildingOperationModel(Building):

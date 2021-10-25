@@ -123,6 +123,8 @@ class DistrictScenario(Scenario):
             }
 
         Make sure, that these flows are InvestmentFlows.
+
+        TODO : Include this methdo in additional constraints sheet.
         """
         flow1_from = self.es.groups[couple_invest_flow['flow1'][0]]
         flow1_to = self.es.groups[couple_invest_flow['flow1'][1]]
@@ -142,6 +144,26 @@ class DistrictScenario(Scenario):
             name="couple_investment_flows"
         )
 
+    def add_addtional_constraints(self):
+        """This method adds the additional constraints from the sheet
+        `Additional_constraints` from the table_collection.
+
+        At the moment, only the "Generic Investment Limit" is implemented.
+        """
+        for _, c in self.table_collection["Additional_constraints"].iterrows():
+
+            if c["type"] == "additional_resource":
+
+                self.model = \
+                    solph.constraints.additional_investment_flow_limit(
+                        self.model, c["keyword"], limit=c["limit"]
+                    )
+            else:
+                raise NotImplementedError(
+                    "This type of constraint %s does not exists, or is not "
+                    "implemented yet.", c["type"]
+                )
+
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None,
               couple_invest_flow=None, **kwargs):
 
@@ -150,6 +172,9 @@ class DistrictScenario(Scenario):
 
         self.create_model()
         self.add_emission_constr()
+
+        if "Additional_constraints" in self.table_collection.keys():
+            self.add_addtional_constraints()
 
         if couple_invest_flow is not None:
             self.add_couple_invest_contr(couple_invest_flow)

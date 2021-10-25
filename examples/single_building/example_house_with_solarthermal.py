@@ -32,15 +32,15 @@ kataster = {
     # roof 1, e.g. west orientation
     'roof_1_azimuth': 90,          # Ausrichtung [°]
     'roof_1_pitch': 40,             # Dachneigung in [°]
-    'roof_1_area_usable': 40,       # [m²]
+    'roof_1_area_usable': 20,       # [m²]
     # roof 1, e.g. south orientation
     'roof_2_azimuth': 180,           # Ausrichtung [°]
     'roof_2_pitch': 40,             # Dachneigung in [°]
-    'roof_2_area_usable': 40,       # [m²]
+    'roof_2_area_usable': 20,       # [m²]
     # roof 1, e.g. east orientation
     'roof_3_azimuth': 270,          # Ausrichtung [°]
     'roof_3_pitch': 40,             # Dachneigung in [°]
-    'roof_3_area_usable': 40,       # [m²]
+    'roof_3_area_usable': 20,       # [m²]
 
     # solar thermal options
     # maximum share of roof area considered for solar thermal
@@ -87,6 +87,8 @@ house = BuildingInvestModel(
     start_date="2015-01-01 01:00",
     location=(52.516254, 13.377535),
     solar_thermal_collector=my_collector,
+    exclusive_roof_constraint=True,     # for each roof a constraint with limited area is created
+    pv_system={"space_demand": 5},      # [m²/kWp],
     **kataster,
 )
 
