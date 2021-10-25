@@ -284,6 +284,12 @@ class DistrictScenario(Scenario):
         for label in [heat_bus_label, elec_bus_label]:
             check_label(self.results['main'], label)
 
+        if label_end_energy is None:
+            label_end_energy = ['demand_heat']
+
+        for label in label_end_energy:
+            check_label(self.results['main'], label)
+
         self.analyse_costs()
         self.analyse_emissions()
         self.analyse_kpi(label_end_energy=label_end_energy)
