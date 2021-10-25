@@ -524,7 +524,45 @@ class Building:
             """
 
             prefix = "solarthermal_"
-            bus_label = "b_heat"
+            bus_label = "b_heat_st"
+
+            if len(self.solarthermal) > 0:
+
+                # Add extra Bus for solar thermal heat with excess
+
+                st_bus = pd.Series(
+                    index=tables["Bus"].columns
+                )
+
+                st_bus["label"] = "b_heat_st"
+                st_bus["active"] = 1
+                st_bus["excess"] = 1
+                st_bus["shortage"] = 0
+                st_bus["excess_costs"] = 0
+
+                tables["Bus"] = \
+                    tables["Bus"].append(st_bus, ignore_index=True)
+
+                # Add Transformer with peripherial losses and extra electricity
+                peri_losses = self.solar_thermal_collector.peripherial_loss
+                elec_help = self.solar_thermal_collector.auxilary_electricity
+
+                st_trafo = pd.Series(index=tables["Transformer"].columns)
+
+                st_trafo["label"] = "solar-thermal"
+                st_trafo["active"] = 1
+                st_trafo["investment"] = 0
+                st_trafo["in_1"] = "b_heat_st"
+                st_trafo["in_2"] = "b_elec"
+                st_trafo["out_1"] = "b_heat"
+                st_trafo["out_2"] = 0
+
+                st_trafo["eff_in_1"] = 1
+                st_trafo["eff_in_2"] = elec_help * (1 - peri_losses)
+                st_trafo["eff_out_1"] = 1 - peri_losses
+
+                tables["Transformer"] = \
+                    tables["Transformer"].append(st_trafo, ignore_index=True)
 
             for i in range(len(self.solarthermal)):
 
@@ -575,6 +613,9 @@ class Building:
             trafos["flow.max"] = trafos["flow.max"].astype(object)
 
             for r, c in trafos.iterrows():
+
+                if r == "solar-thermal":
+                    continue
 
                 trafos.loc[r, "flow.nominal_value"] = \
                     self.energy_converter.at[r, "installed"]
@@ -847,6 +888,8 @@ class SolarThermalCollector:
                  eta_0=0.825,
                  a_1=3.41,
                  a_2=0.0161,
+                 peripherial_loss=0.03,
+                 auxilary_electricity=0.01,
                  ):
         """
         Default values baesd on model "SOL 27 premium W" of STIEBEL ELTRON,
@@ -863,11 +906,22 @@ class SolarThermalCollector:
             Thermal loss parameter 1
         a_2 : float
             Thermal loss parameter 2
-
+        peripherial_loss : float
+            Thermal loss of periperhie as share of collector heat generation
+            (Value between 0 and 1)
+        auxilary_electricity : float
+            Electricity consumption of solar thermal system relative to the
+            net thermal output of the system.
+            (Value between 0 and 1)
         """
+        # Collector data
         self.eta_0 = eta_0
         self.a_1 = a_1
         self.a_2 = a_2
+
+        # System characteristics
+        self.peripherial_loss = peripherial_loss
+        self.auxilary_electricity = auxilary_electricity
 
 
 class RoofArea:
