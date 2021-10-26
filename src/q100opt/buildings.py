@@ -558,7 +558,7 @@ class Building:
 
                 st_trafo = pd.Series(index=tables["Transformer"].columns)
 
-                st_trafo["label"] = "solar-thermal"
+                st_trafo["label"] = "solar-thermal-peri"
                 st_trafo["active"] = 1
                 st_trafo["investment"] = 0
                 st_trafo["in_1"] = "b_heat_st"
@@ -625,7 +625,8 @@ class Building:
 
             for r, c in trafos.iterrows():
 
-                if r == "solar-thermal":
+                if r == "solar-thermal-peri":
+                    trafos.loc[r, "invest.ep_costs"] = 0.001
                     continue
 
                 trafos.loc[r, "flow.nominal_value"] = \
@@ -818,7 +819,7 @@ class BuildingInvestModel(Building):
     def __init__(self, exclusive_roof_constraint, **kwargs):
         super().__init__(**kwargs)
 
-        self.exclusive_roof_constraint=exclusive_roof_constraint
+        self.exclusive_roof_constraint = exclusive_roof_constraint
 
     def create_table_collection(self):
         """Creates the table collection for the energy system model."""
@@ -836,7 +837,6 @@ class BuildingInvestModel(Building):
 
         if self.exclusive_roof_constraint:
             self.add_constraint_table()
-
 
         return self.table_collection
 
