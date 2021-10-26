@@ -625,13 +625,6 @@ class Building:
 
             for r, c in trafos.iterrows():
 
-                if r == "solar-thermal-peri":
-                    trafos.loc[r, "invest.ep_costs"] = 0.001
-                    continue
-
-                trafos.loc[r, "flow.nominal_value"] = \
-                    self.energy_converter.at[r, "installed"]
-
                 trafos.loc[r, "invest.ep_costs"] = \
                     self.techdata.loc[r]["ep_costs"]
 
@@ -640,6 +633,12 @@ class Building:
 
                 trafos.loc[r, "invest.minimum"] = \
                     self.techdata.loc[r]["minimum"]
+
+                if r == "solar-thermal-peri":
+                    continue
+
+                trafos.loc[r, "flow.nominal_value"] = \
+                    self.energy_converter.at[r, "installed"]
 
                 trafos.loc[r, "invest.maximum"] = \
                     self.energy_converter.at[r, "maximum"]
@@ -816,7 +815,7 @@ class BuildingInvestModel(Building):
     ----------
     See :class:`Building`
     """
-    def __init__(self, exclusive_roof_constraint, **kwargs):
+    def __init__(self, exclusive_roof_constraint=True, **kwargs):
         super().__init__(**kwargs)
 
         self.exclusive_roof_constraint = exclusive_roof_constraint
