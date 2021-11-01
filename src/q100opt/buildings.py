@@ -925,8 +925,8 @@ class SolarThermalCollector:
                  auxilary_electricity=0.01,
                  ):
         """
-        Default values baesd on model "SOL 27 premium W" of STIEBEL ELTRON,
-        see:
+        Default values of collector databaesd on model "SOL 27 premium W"
+        of STIEBEL ELTRON, see:
 
         https://www.stiebel-eltron.de/content/dam/ste/de/de/products/downloads
         /Planungsunterlagen/Planungshandbuch/Planungshandbuch_EE_Solar.pdf
