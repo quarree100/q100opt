@@ -955,6 +955,4 @@ def plot_pf_pareto(d_pfa,
         plt.show()
 
     if filename is not None:
-        fig.savefig(filename,
-                    # bbox_inches='tight',
-                    )
+        fig.savefig(filename)
