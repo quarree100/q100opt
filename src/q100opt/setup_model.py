@@ -227,8 +227,9 @@ def get_invest_obj(row):
             for ia in ia_list:
                 invest_attr[ia] = row['invest.' + ia]
 
-            if 'offset' in ia_list and invest_attr['minimum'] > 0:
-                invest_attr['nonconvex'] = True
+            if "minimum" in ia_list and "offset" in ia_list:
+                if invest_attr['minimum'] > 0:
+                    invest_attr['nonconvex'] = True
 
             invest_object = solph.Investment(**invest_attr)
 
