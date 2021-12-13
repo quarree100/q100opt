@@ -170,6 +170,8 @@ class DistrictScenario(Scenario):
         if self.es is None:
             self.table2es()
 
+        logging.info("Creating model ...")
+
         self.create_model()
         self.add_emission_constr()
 
@@ -178,8 +180,6 @@ class DistrictScenario(Scenario):
 
         if couple_invest_flow is not None:
             self.add_couple_invest_contr(couple_invest_flow)
-
-        logging.info("Optimising using {0} ...".format(solver))
 
         if with_duals:
             self.model.receive_duals()
@@ -196,6 +196,8 @@ class DistrictScenario(Scenario):
         solver_kwargs = {
             "cmdline_options": kwargs.get(
                 "solver_cmdline_options", {})}
+
+        logging.info("Optimising using {0} ...".format(solver))
 
         self.model.solve(
             solver=solver, solve_kwargs={"tee": tee, "logfile": logfile},
@@ -304,7 +306,9 @@ class DistrictScenario(Scenario):
         logging.info("DistrictEnergySystem restored.")
 
     def analyse_results(self, heat_bus_label='b_heat',
-                        elec_bus_label='b_elec', label_end_energy=None):
+                        elec_bus_label='b_elec', label_end_energy=None,
+                        floor_area=None,
+                        ):
         """Calls all analysis methods."""
         for label in [heat_bus_label, elec_bus_label]:
             check_label(self.results['main'], label)
@@ -317,7 +321,8 @@ class DistrictScenario(Scenario):
 
         self.analyse_costs()
         self.analyse_emissions()
-        self.analyse_kpi(label_end_energy=label_end_energy)
+        self.analyse_kpi(label_end_energy=label_end_energy,
+                         floor_area=floor_area)
         self.analyse_sequences()
         self.results['sum'] = self.results['sequences'].sum()
         self.analyse_boundary_flows()
@@ -376,7 +381,7 @@ class DistrictScenario(Scenario):
 
         return self.results['emission_analysis']
 
-    def analyse_kpi(self, label_end_energy=None):
+    def analyse_kpi(self, label_end_energy=None, floor_area=None):
         """Description."""
         if label_end_energy is None:
             label_end_energy = ['demand_heat']
@@ -398,6 +403,17 @@ class DistrictScenario(Scenario):
                 'specific costs [€/kWh]': costs/end_energy,
                 'specific emission [kg/kWh]': emissions/end_energy,
             }
+
+            if floor_area is not None:
+                kpi_dct.update(
+                    {
+                        "floor_area_m2": floor_area,
+                        "floor_specific_costs [€/m2a]":
+                            costs / floor_area,
+                        "floor_specific_emission [kg/m2a]":
+                            emissions / floor_area,
+                    }
+                )
 
             kpi = pd.Series(kpi_dct)
 
@@ -779,6 +795,7 @@ class ParetoFront(DistrictScenario):
 
     def analyse_results(self, heat_bus_label='b_heat',
                         elec_bus_label='b_elec',
+                        floor_area=None,
                         label_end_energy=None):
         """Performs several analysis methods of the ParetoFront class.
 
@@ -801,7 +818,8 @@ class ParetoFront(DistrictScenario):
         for _, des in self.district_scenarios.items():
             des.analyse_results(
                 heat_bus_label=heat_bus_label, elec_bus_label=elec_bus_label,
-                label_end_energy=label_end_energy
+                label_end_energy=label_end_energy,
+                floor_area=floor_area,
             )
 
         self.analyse_costs(label_end_energy=label_end_energy)
@@ -818,13 +836,16 @@ class ParetoFront(DistrictScenario):
         self.results['emissions'] = self.get_all_emissions()
         self.results['scalars'] = self.get_all_scalars()
 
-    def analyse_kpi(self, label_end_energy=None):
+    def analyse_kpi(self, label_end_energy=None, floor_area=None):
         """
         Performs some postprocessing methods for all
         DistrictEnergySystems in the `ParetoFront`.
 
         Parameters
         ----------
+        floor_area : int or float
+            Reference floor area. Just for refering the results to
+            floor specific values.
         label_end_energy : list
             List with labels of end energy flows. For the KPI calculation
             the absolute cost and emission values are related to the
@@ -843,7 +864,10 @@ class ParetoFront(DistrictScenario):
         d_kpi = {}
         for e_key, des in self.district_scenarios.items():
             d_kpi.update(
-                {e_key: des.analyse_kpi(label_end_energy=label_end_energy)}
+                {e_key: des.analyse_kpi(
+                    label_end_energy=label_end_energy,
+                    floor_area=floor_area
+                )}
             )
 
         df_kpi = pd.concat(d_kpi, axis=1)
