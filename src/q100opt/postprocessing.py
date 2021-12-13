@@ -217,6 +217,12 @@ def get_invest_table(results, keys):
                     for x in keys]
     df['invest_value'] = [results['main'][x]['scalars']['invest']
                           for x in keys]
+    df['invest_maximum'] = [
+        results['param'][x]['scalars']['investment_maximum'] for x in keys
+    ]
+    df['invest_minimum'] = [
+        results['param'][x]['scalars']['investment_minimum'] for x in keys
+    ]
     df['costs'] = df['invest_value'] * df['ep_costs'] + df[
         'offset'] * np.sign(df['invest_value'])
 
@@ -337,14 +343,25 @@ def get_attr_flows(results, key='variable_costs'):
     var_scalars = [
         x for x in list_keys
         if key in param[x]['scalars'].keys()
-        if abs(param[x]['scalars'][key]) > 0
+        # if abs(param[x]['scalars'][key]) > 0
     ]
 
     var_sequences = [
         x for x in list_keys
         if key in param[x]['sequences'].keys()
-        if abs(param[x]['sequences'][key].sum()) > 0
+        # if abs(param[x]['sequences'][key].sum()) > 0
     ]
+
+    if key != "emission_factor":
+        var_scalars = [
+            x for x in var_scalars
+            if abs(param[x]['scalars'][key]) > 0
+        ]
+
+        var_sequences = [
+            x for x in var_sequences
+            if abs(param[x]['sequences'][key].sum()) > 0
+        ]
 
     var_cost_flows = var_scalars + var_sequences
 
