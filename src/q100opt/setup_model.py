@@ -494,11 +494,16 @@ def add_storages(tab, busd, timeseries=None):
             # in_attr = {}
             # out_attr = {}
 
+        if "bus_out" in s.index:
+            bus_out = busd[s['bus_out']]
+        else:
+            bus_out = busd[s['bus']]
+
         storages.append(
             solph.components.GenericStorage(
                 label=s['label'],
                 inputs={busd[s['bus']]: solph.Flow(**in_attr)},
-                outputs={busd[s['bus']]: solph.Flow(**out_attr)},
+                outputs={bus_out: solph.Flow(**out_attr)},
                 investment=io,
                 **sto_attr,
             )
