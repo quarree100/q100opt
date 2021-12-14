@@ -308,6 +308,7 @@ class DistrictScenario(Scenario):
     def analyse_results(self, heat_bus_label='b_heat',
                         elec_bus_label='b_elec', label_end_energy=None,
                         floor_area=None,
+                        **kwargs,
                         ):
         """Calls all analysis methods."""
         for label in [heat_bus_label, elec_bus_label]:
@@ -322,7 +323,7 @@ class DistrictScenario(Scenario):
         self.analyse_costs()
         self.analyse_emissions()
         self.analyse_kpi(label_end_energy=label_end_energy,
-                         floor_area=floor_area)
+                         floor_area=floor_area, **kwargs)
         self.analyse_sequences()
         self.results['sum'] = self.results['sequences'].sum()
         self.analyse_boundary_flows()
@@ -381,8 +382,25 @@ class DistrictScenario(Scenario):
 
         return self.results['emission_analysis']
 
-    def analyse_kpi(self, label_end_energy=None, floor_area=None):
-        """Description."""
+    def analyse_kpi(self, label_end_energy=None, floor_area=None,
+                    gsc_labels=None):
+        """Gets the KPI values and puts them into a table.
+
+        Parameters
+        ----------
+        label_end_energy : list
+            List with labels of energy sinks, to which the results are related.
+        floor_area : float
+            Total floor area the results are related to.
+        gsc_labels : tuple
+            (Import_label, Export_label): The labels usually for the
+            electricity import and export.
+
+        Returns
+        -------
+        pandas.DataFrame : Updates the results dictionary with the key "kpi"
+            and returns the kpi dataframe.
+        """
         if label_end_energy is None:
             label_end_energy = ['demand_heat']
 
@@ -414,6 +432,9 @@ class DistrictScenario(Scenario):
                             emissions / floor_area,
                     }
                 )
+
+            if gsc_labels is not None:
+                kpi_dct.update(self._calc_gsc(gsc_labels))
 
             kpi = pd.Series(kpi_dct)
 
@@ -496,6 +517,82 @@ class DistrictScenario(Scenario):
             logging.info("Electricity bus analysed.")
 
         return self.results['electricity_bus']
+
+    def _calc_gsc(self, gsc_labels):
+        """..."""
+        key_import = [
+            x for x in self.results["param"].keys()
+            if x[1] is not None
+            if gsc_labels[0] == x[0].label
+        ]
+        param_import = self.results["param"][key_import[0]][
+            "sequences"]["emission_factor"].values
+
+        results_import = self.results["main"][key_import[0]][
+            "sequences"]["flow"].values
+
+        key_export = [
+            x for x in self.results["param"].keys()
+            if x[1] is not None
+            if gsc_labels[1] == x[1].label
+        ]
+
+        param_export = self.results["param"][key_export[0]][
+            "sequences"]["emission_factor"].values
+
+        results_export = self.results["main"][key_export[0]][
+            "sequences"]["flow"].values
+
+        if sum(results_import) > 0:
+            import_gsc = sum(param_import * results_import) / sum(results_import)
+            corr_import = pd.DataFrame(
+                data=[param_import, results_import]).T.corr().loc[0, 1]
+        elif sum(results_import) == 0:
+            import_gsc = 0
+            corr_import = 0
+        else:
+            raise ValueError
+
+        if sum(results_export) > 0:
+            export_gsc = sum(param_export * results_export) / sum(results_export)
+            corr_export = pd.DataFrame(
+                data=[param_export, results_export]).T.corr().loc[0, 1]
+        elif sum(results_export) == 0:
+            export_gsc = 0
+            corr_export = 0
+        else:
+            raise ValueError
+
+        if sum(results_import) + sum(results_export) > 0:
+            total_gsc = (
+                            sum(param_import * results_import) +
+                            sum(param_export * results_export)
+                        ) / (
+                            sum(results_import) + sum(results_export)
+                        )
+        elif sum(results_import) + sum(results_export) == 0:
+            total_gsc = 0
+        else:
+            raise ValueError
+
+        # # add correlation factor
+        # corr_import = pd.DataFrame(
+        #     data=[param_import, results_import]).T.corr().loc[0, 1]
+
+        # import numpy as np
+        #
+        # np.corrcoef(param_import, results_import)
+        # np.corrcoef(param_export, results_export)
+
+        d_gsc = {
+            "gsc_import": import_gsc,
+            "gsc_export": export_gsc,
+            "gsc_total": total_gsc,
+            "gsc_corr_import": corr_import,
+            "gsc_corr_export": corr_export,
+        }
+
+        return d_gsc
 
 
 def load_district_scenario(path, filename):
@@ -796,7 +893,8 @@ class ParetoFront(DistrictScenario):
     def analyse_results(self, heat_bus_label='b_heat',
                         elec_bus_label='b_elec',
                         floor_area=None,
-                        label_end_energy=None):
+                        label_end_energy=None,
+                        **kwargs):
         """Performs several analysis methods of the ParetoFront class.
 
         The processed results are stored within the attribute "results".
@@ -820,12 +918,13 @@ class ParetoFront(DistrictScenario):
                 heat_bus_label=heat_bus_label, elec_bus_label=elec_bus_label,
                 label_end_energy=label_end_energy,
                 floor_area=floor_area,
+                **kwargs,
             )
 
         self.analyse_costs(label_end_energy=label_end_energy)
 
         self.results['kpi'] = self.analyse_kpi(
-            label_end_energy=label_end_energy
+            label_end_energy=label_end_energy, **kwargs
         )
         self.results['heat_generation'] = self.analyse_heat_generation_flows(
             heat_bus_label=heat_bus_label
@@ -836,7 +935,7 @@ class ParetoFront(DistrictScenario):
         self.results['emissions'] = self.get_all_emissions()
         self.results['scalars'] = self.get_all_scalars()
 
-    def analyse_kpi(self, label_end_energy=None, floor_area=None):
+    def analyse_kpi(self, label_end_energy=None, floor_area=None, **kwargs):
         """
         Performs some postprocessing methods for all
         DistrictEnergySystems in the `ParetoFront`.
@@ -866,7 +965,8 @@ class ParetoFront(DistrictScenario):
             d_kpi.update(
                 {e_key: des.analyse_kpi(
                     label_end_energy=label_end_energy,
-                    floor_area=floor_area
+                    floor_area=floor_area,
+                    gsc_labels=kwargs.get("gsc_labels", None)
                 )}
             )
 
