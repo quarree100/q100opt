@@ -956,3 +956,25 @@ def plot_pf_pareto(d_pfa,
 
     if filename is not None:
         fig.savefig(filename)
+
+
+def plot_emissions_bar(pf, show_plot=True, filename=None,
+                       title=None):
+
+    df = pf.results["emissions"]
+
+    df = df.loc[:, idx[:, :, :, "emissions"]].copy()
+
+    df.columns = df.columns.droplevel(0)
+    df.columns = df.columns.droplevel(2)
+
+    df.plot(kind="bar", stacked=True)
+
+    plt.title(title)
+    plt.tight_layout()
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        pass
