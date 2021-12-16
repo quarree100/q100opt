@@ -167,6 +167,8 @@ class DistrictScenario(Scenario):
     def solve(self, with_duals=False, tee=True, logfile=None, solver=None,
               couple_invest_flow=None, **kwargs):
 
+        flow_factor = kwargs.get("additional_flow_factor", None)
+
         if self.es is None:
             self.table2es()
 
@@ -174,6 +176,12 @@ class DistrictScenario(Scenario):
 
         self.create_model()
         self.add_emission_constr()
+
+        if flow_factor is not None:
+            solph.constraints.generic_integral_limit(
+                self.model, keyword=flow_factor["keyword"],
+                limit=flow_factor["limit"],
+            )
 
         if "Additional_constraints" in self.table_collection.keys():
             self.add_addtional_constraints()
