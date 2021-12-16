@@ -161,7 +161,16 @@ def get_invest_converter_table(results):
            oemof.solph.Transformer or Source, from that the flow is coming.
     """
     converter_units = get_invest_converter(results['main'])
-    return get_invest_table(results, converter_units)
+    df = get_invest_table(results, converter_units)
+
+    df["energy"] = [
+        results["main"][x]["sequences"]["flow"].sum() for x in converter_units
+    ]
+
+    df["full_load_hours"] = df["energy"] / df['invest_value']
+    df["full_load_hours"] = df["full_load_hours"].fillna(0)
+
+    return df
 
 
 def get_invest_storage_table(results):
