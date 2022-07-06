@@ -739,6 +739,101 @@ def plot_pf_generic_flow_scalar(d_pf,
         fig.savefig(filename)
 
 
+def plot_pf_average_emission(d_pf,
+                    x_values_label=None,
+                    y_label=None,
+                    filename=None,
+                    title=None,
+                    col=4,
+                    show_plot=True):
+
+    def _get_x_values():
+        if x_values_label is None:
+            x_val = df_scalars.xs(sz).index.astype("float")
+        else:
+            x_val = df_scalars.loc[
+                sz,
+                idx["kpi", :, :, x_values_label]
+            ].values
+
+        return x_val
+
+    idx = pd.IndexSlice
+
+    d_scalars = {k: v.results['scalars'] for (k, v) in d_pf.items()}
+    df_scalars = pd.concat(d_scalars, axis=0)
+
+    label_invest_flow = list(df_scalars.loc[
+                             :, idx["emission", :, :, "var_emissions_av_flow"]
+                             ].columns.get_level_values(2))
+    num_invest_flows = len(label_invest_flow)
+
+
+    cols = col
+    rows = divmod(num_invest_flows, cols)[0] + \
+           np.sign(divmod(num_invest_flows, cols)[1])
+
+    fig, axes = plt.subplots(
+        nrows=rows,
+        ncols=cols,
+        sharex=True,
+        figsize=[2 * 6.4, rows * 0.5 * 4.8],
+    )
+
+    kw = {
+        # 'marker': '.',
+        'markersize': 6,
+        'linestyle': "dashed",
+    }
+
+    scenarios = list(d_pf.keys())
+    marker_list = ['X', 'o', 'v', '^', '<', '>']
+    xlabel = x_values_label
+
+    for i in range(num_invest_flows):
+        r = divmod(i, cols)[0]
+        c = divmod(i, cols)[1]
+        label = label_invest_flow[i]
+
+        axes[r][0].set_ylabel(y_label)
+
+        for sz in scenarios:
+            marker = marker_list[divmod(scenarios.index(sz),
+                                        len(marker_list))[1]]
+
+            x_values = _get_x_values()
+
+            axes[r][c].plot(
+                x_values,
+                df_scalars.loc[
+                    sz, idx["capex", :, label, y_label]].values,
+                marker=marker,
+                **kw,
+                label=sz,
+                # color=lookup.at[sz, 'color']
+            )
+            axes[r][c].set_title(label)
+            axes[r][c].grid(True)
+            # axes[r][c].set_ylim(bottom=0)
+
+            # add xlabel for last row
+            if r == rows - 1:
+                axes[r][c].set_xlabel(xlabel)
+
+    h, l = axes[0][0].get_legend_handles_labels()
+
+    plt.tight_layout()
+    axes[1][col-1].legend(h, l)
+
+    fig.suptitle(title)
+
+    if show_plot:
+        plt.show()
+
+    if filename is not None:
+        fig.savefig(filename)
+
+
 def plot_pf_sources_sinks(
     d_pf, x_values="label", filename=None, title=None, col=4, show_plot=True,
     x_values_label=None,
